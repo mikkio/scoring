@@ -112,7 +112,7 @@ usage: score [-h] [-marksheet ref-filename] [-crate] [-join filename] [-twins]
 \begin{itemize}
 \item headerなし
 
-\item 1列名が学籍番号(下7桁), 2列目以降はマークシートのマーク番号
+\item 1列目が学籍番号(下7桁), 2列目以降はマークシートのマーク番号
 
 \end{itemize}
 
@@ -160,11 +160,12 @@ usage: score [-h] [-marksheet ref-filename] [-crate] [-join filename] [-twins]
 \subsection{マークシート採点}
 \label{マークシート採点}
 
-\subsubsection{\texttt{-marksheet reference-filename}}
-\label{-marksheetreference-filename}
+\subsubsection{\texttt{score csvfielname -marksheet reference-filename ...}}
+\label{scorecsvfielname-marksheetreference-filename...}
 
 \texttt{csvfilename}をマークシート読み取り結果として読み込み、採点を行う。
 マークシートの正解を定義したファイルを引数として与える。
+\texttt{-twins}以外の全てのオプションを同時に使用可能。
 チェック用として各学生・各問題ごとの正誤(正=1, 誤=0)のcsvファイルを以下の
 名称で保存する。
 
@@ -174,7 +175,6 @@ usage: score [-h] [-marksheet ref-filename] [-crate] [-join filename] [-twins]
 \end{itemize}
 
 マークシート採点のための正解定義は\ref{mksheet-ref}節参照。
-同時に点数調整・統合・分析用のオプションを指定してもよい。
 学籍番号はすべて頭に\texttt{20}が付けられるので(\texttt{200000000}を足す)、
 必ず下7桁になっている必要がある。
 
@@ -187,8 +187,8 @@ usage: score [-h] [-marksheet ref-filename] [-crate] [-join filename] [-twins]
 \subsection{統合}
 \label{統合}
 
-\subsubsection{\texttt{-join csvfilename2}}
-\label{-joincsvfilename2}
+\subsubsection{\texttt{score csvfilename -join csvfilename2 ...}}
+\label{scorecsvfilename-joincsvfilename2...}
 
 必須ファイル\texttt{csvfilename}で指定されたデータ\floatfootnote{\texttt{-marksheet}オプションが指定されている場合は、採点結果に対して適用される。}に\texttt{csvfilename2}で
 指定されるデータを統合する。統合は、keyとして学籍番号を用い、
@@ -260,6 +260,8 @@ usage: score [-h] [-marksheet ref-filename] [-crate] [-join filename] [-twins]
 
 \end{itemize}
 
+他のあらゆるオプションを同時使用可能。
+
 \subsection{点数調整}
 \label{点数調整}
 
@@ -288,7 +290,7 @@ usage: score [-h] [-marksheet ref-filename] [-crate] [-join filename] [-twins]
 \label{分析}
 
 分析は点数調整後の成績に対して行われる（すなわち出力ファイルに対する
-分析である。以下のような種類(オプション名)があり、同時に指定できる。
+分析である）。以下のような種類(オプション名)があり、同時に指定できる。
 出力はすべて\texttt{stderr}に出力される。
 
 \begin{itemize}
@@ -309,7 +311,7 @@ usage: score [-h] [-marksheet ref-filename] [-crate] [-join filename] [-twins]
 
 \end{itemize}
 
-他のほとんどのコマンドと併用できる。最終結果(すなわち出力データ)に対する
+あらゆる他のオプションと同時併用できる。最終結果(すなわち出力データ)に対する
 分析を行う。先に行われるのは、マークシート採点、統合、点数調整である。
 いずれも指定されていない場合は、入力としての\texttt{csvfilename}がそのまま
 分析対象となる。\texttt{-twins}オプションが指定されている場合は、

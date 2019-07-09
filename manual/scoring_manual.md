@@ -65,7 +65,7 @@ usage: score [-h] [-marksheet ref-filename] [-crate] [-join filename] [-twins]
 * `-marksheet`オプションが指定された場合
     - マークシートの読取結果(学生の解答ファイル)とみなされる
         - headerなし
-        - 1列名が学籍番号(下7桁), 2列目以降はマークシートのマーク番号
+        - 1列目が学籍番号(下7桁), 2列目以降はマークシートのマーク番号
 * `-twins`オプションが指定された場合
     - twinsアップロード用csvファイルと見なされる
         - headerあり(ただし、scoreコマンドは無視する: shift-jisのため)
@@ -83,15 +83,15 @@ usage: score [-h] [-marksheet ref-filename] [-crate] [-join filename] [-twins]
 以下では、作業の種別毎にオプションを説明する。
 
 ## マークシート採点
-### `-marksheet reference-filename`
+### `score csvfielname -marksheet reference-filename ...`
 `csvfilename`をマークシート読み取り結果として読み込み、採点を行う。
 マークシートの正解を定義したファイルを引数として与える。
+`-twins`以外の全てのオプションを同時に使用可能。
 チェック用として各学生・各問題ごとの正誤(正=1, 誤=0)のcsvファイルを以下の
 名称で保存する。
 * `csvfilename.marubatu`
 
 マークシート採点のための正解定義は[mksheet-ref]節参照。
-同時に点数調整・統合・分析用のオプションを指定してもよい。
 学籍番号はすべて頭に`20`が付けられるので(`200000000`を足す)、
 必ず下7桁になっている必要がある。
 
@@ -100,7 +100,7 @@ usage: score [-h] [-marksheet ref-filename] [-crate] [-join filename] [-twins]
 各小問毎の正解率を`stderr`に出力する。
 
 ## 統合
-### `-join csvfilename2`
+### `score csvfilename -join csvfilename2 ...`
 必須ファイル`csvfilename`で指定されたデータ[^mk]に`csvfilename2`で
 指定されるデータを統合する。統合は、keyとして学籍番号を用い、
 `pandas`の`merge`関数を用いる。統合(join)方法は以下の2種類。
@@ -127,6 +127,8 @@ usage: score [-h] [-marksheet ref-filename] [-crate] [-join filename] [-twins]
     - 2列目以降の点数は合計される
     - 統合後に`csvfilename`と`csvfilename2`の点数は合計される
 
+他のあらゆるオプションを同時使用可能。
+
 [^mk]: `-marksheet`オプションが指定されている場合は、採点結果に対して適用される。
 
 ## 点数調整
@@ -145,7 +147,7 @@ usage: score [-h] [-marksheet ref-filename] [-crate] [-join filename] [-twins]
 
 ## 分析
 分析は点数調整後の成績に対して行われる（すなわち出力ファイルに対する
-分析である。以下のような種類(オプション名)があり、同時に指定できる。
+分析である）。以下のような種類(オプション名)があり、同時に指定できる。
 出力はすべて`stderr`に出力される。
 * `-distribution`: 点数分布のヒストグラム出力
 * `-abcd`: 標語(A+, A, B, C, D)の人数分布
@@ -154,7 +156,7 @@ usage: score [-h] [-marksheet ref-filename] [-crate] [-join filename] [-twins]
     - 学類毎の学籍番号を定義したファイルを引数として与える
     - 定義ファイルの詳細は[gakurui-info]節参照。
 
-他のほとんどのコマンドと併用できる。最終結果(すなわち出力データ)に対する
+あらゆる他のオプションと同時併用できる。最終結果(すなわち出力データ)に対する
 分析を行う。先に行われるのは、マークシート採点、統合、点数調整である。
 いずれも指定されていない場合は、入力としての`csvfilename`がそのまま
 分析対象となる。`-twins`オプションが指定されている場合は、
