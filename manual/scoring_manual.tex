@@ -10,6 +10,8 @@
 \section{scoringパッケージの概要}
 \label{scoringパッケージの概要}
 
+(この\texttt{readme.md}をtexでpdfにしたファイルが\texttt{test\slash scoring\_manual.pdf}にある)
+
 採点の流れの中で以下のような作業をscoringパッケージはサポートする。
 
 \begin{enumerate}
@@ -23,12 +25,7 @@
 \item 統合
 
 \begin{itemize}
-\item マークシート以外の成績情報を統合する
-
-\begin{itemize}
-\item 例えば、宿題や筆記問題の採点結果など
-
-\end{itemize}
+\item マークシート以外の成績情報を統合する(例えば、宿題や筆記問題の採点結果など)
 
 \end{itemize}
 
@@ -66,18 +63,21 @@ installは以下の2つのファイルを正しい場所に配置すればよい
 \item \texttt{src\slash scoring.py}: pythonのプログラム(モジュール)である。pythonのライブラリパスが
 通っているところにコピーする。
 
-\item \texttt{bin\slash score}: scoringパッケージを呼び出すbashシェル。scoringパッケージのすべての機能は
-このscoreコマンドを通して提供される。
+\item \texttt{bin\slash score}: scoringパッケージを呼び出すbashシェル。\texttt{PATH}が通っているところにコピーする。
+scoringパッケージのすべての機能はこのscoreコマンドを通して提供される。
 
 \end{itemize}
 
 \texttt{make install}で配置したい場合は\texttt{Makefile}の中の以下の2つの変数を
-正しくセットしてから、\texttt{make install}すればよい。
+正しくセットしてから、\texttt{make install}する。
+\begin{tcolorbox}[enhanced jigsaw,breakable,colframe=\mycolor ,colback=white,colbacktitle=\mycolor ,coltitle=white,fonttitle=\bfseries\sffamily]
 
 \begin{verbatim}
 pylib = scoring.pyを入れるディレクトリ(普通は$PYTHONPATH)
 bindir = scoreコマンドを入れるディレクトリ($PATHのどれか)
 \end{verbatim}
+
+\end{tcolorbox}
 
 \section{scoreコマンドの使い方}
 \label{scoreコマンドの使い方}
@@ -190,8 +190,7 @@ usage: score [-h] [-marksheet ref-filename] [-crate] [-join filename] [-twins]
 \subsubsection{\texttt{-join csvfilename2}}
 \label{-joincsvfilename2}
 
-必須ファイル\texttt{csvfilename}で指定されたデータ\floatfootnote{\texttt{-marksheet}オプションが指定されている場合は、採点結果に対して
-適用される。}に\texttt{csvfilename2}で
+必須ファイル\texttt{csvfilename}で指定されたデータ\floatfootnote{\texttt{-marksheet}オプションが指定されている場合は、採点結果に対して適用される。}に\texttt{csvfilename2}で
 指定されるデータを統合する。統合は、keyとして学籍番号を用い、
 \texttt{pandas}の\texttt{merge}関数を用いる。統合(join)方法は以下の2種類。
 
@@ -344,6 +343,9 @@ headerが正しくshift-jisで出力されない
 \section{使用例}
 \label{使用例}
 
+\subsection{使用例1}
+\label{使用例1}
+
 ある科目の使用例。この科目では期末試験でマークシート問題と記述問題の
 2種類の解答をしてもらった。また、宿題の点数が別に定義されている。
 
@@ -470,6 +472,14 @@ headerが正しくshift-jisで出力されない
 
 \end{enumerate}
 
+\subsection{使用例2}
+\label{使用例2}
+
+\texttt{test}ディレクトリ以下に簡単なデータが準備してある。
+準備されているデータは例として参考にしてください。
+\texttt{test}ディクレトリで\texttt{auto.sh}を起動すると使用例1の簡単化された手続きが実行される。
+結果の例が\texttt{test\slash test-ref}ディレクトリ以下にあるので正しく動作しているかを確認のためにも使える。
+
 \section{付録}
 \label{付録}
 
@@ -481,7 +491,7 @@ headerが正しくshift-jisで出力されない
 \subsubsection{マークシート読み取り}
 \label{マークシート読み取り}
 
-情報メディア創成学類所有のマークシート読み取り装置を使って読み取る。
+学類所有のマークシート読み取り装置を使って読み取る。
 前提としているマークシートは以下。
 
 \begin{itemize}
@@ -500,11 +510,11 @@ headerが正しくshift-jisで出力されない
 \end{itemize}
 
 \end{itemize}
-学籍番号のマークをミスる学生がいるので手で修正(2019年度情報メディア入門Aの
-320人の学生で、2人の学生がおかしな番号を入れていた)。
+学籍番号のマークをミスる学生がいるので手で修正(2019年度のある科目では、
+320人中2人の学生がおかしな番号を入れていた)。
 解答欄は修正しない。
-結果として、1列目が学籍番号(下7桁)、2列目以降がマークシートのマーク番号と
-なっているcsvファイルを作る。
+結果として、1列目が学籍番号(下7桁)、2列目以降がマークシートの各列の解答番号と
+なっているcsvファイルができればよい。
 
 \paragraph{マークシート読取手順}
 \label{マークシート読取手順}
@@ -515,7 +525,7 @@ headerが正しくshift-jisで出力されない
 \item 学類のマークシート読取装置と専用ノートパソコンを接続・起動
 
 \begin{itemize}
-\item ノートPCのloginはID=mast\_fd, pass=IDと同じ
+\item ノートPCのloginはID=\textbf{\textbf{, pass=}}
 
 \end{itemize}
 
