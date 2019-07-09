@@ -1,0 +1,1 @@
+manual/scoring_manual.md
