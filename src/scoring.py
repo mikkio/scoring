@@ -2,112 +2,163 @@ import numpy as np
 import pandas as pd
 import sys
 
-# problem type definition
-S = 0
-MS = 1
-Num = 2
+# question type definition
+S = 0   # [S, col, corr [,rate]]
+MS = 1  # [MS, [cols,..], [corr,..] [,rate]]
+Num = 2 # [Num, [cols,..], [corr,..] [,rate]]
+SS = 3  # [SS, [start,end], [corr,...] [,rate]]
 
-# the list of problem type and reference
+# the list of question type and reference
 # [type, column, answer[, num_candidate]]
-ProblemReferences = None
+QuestionReferences = None
 
 # ID's information for each gakurui
 IdInfoGakurui = None
 
-def get_numproblems(prs):
-    numpro = 0
-    for pr in prs:
-        if pr[0] == MS:
-            numpro += len(pr[1])
-        else: numpro += 1
-    return numpro
+def get_num_squestions(qref):
+    numq = 0
+    for q in qref:
+        if q[0] == MS:
+            numq += len(q[1])
+        elif q[0] == SS:
+            numq += q[1][1]-q[1][0]+1
+        else: numq += 1
+    return numq
 
-def ascoringS(answer, pr):
-    if answer[pr[1]] == pr[2]:
+def ascoringS(answer, q):
+    if answer[q[1]] == q[2]:
         return 1
     else:
         return 0
 
-def ascoringMS(answer, i, pcolumns, ref):
-    ans = answer[pcolumns[i]]
-    for j in range(i):
-        if ans == answer[pcolumns[j]]:
-            ans = -1
-    if ans in ref:
+def ascoringMS(answer, columns, i, ref):
+    ans = answer[columns]
+    if ref[i] in ans:
         return 1
     else:
         return 0
 
-def ascoringNum(answer, pcolumns, ref):
-    for i,p in enumerate(pcolumns):
+def ascoringSS(answer, i, columns, ref):
+    ans = answer[columns[0]+i]
+    if ans == ref[i]:
+        return 1
+    else:
+        return 0
+
+def ascoringNum(answer, columns, ref):
+    for i,p in enumerate(columns):
         if answer[p] != ref[i]:
             return 0
     return 1
 
-def ascoring(df, pr):
-    if pr[0] == S:
-        return df.apply(ascoringS, axis=1, raw=True, args=(pr,))
-    elif pr[0] == MS:
+def ascoring(df, q):
+    if q[0] == S:
+        return df.apply(ascoringS, axis=1, raw=True, args=(q,))
+    elif q[0] == MS:
         res = None 
-        for i in range(len(pr[1])):
-            rr = df.apply(ascoringMS, axis=1, raw=True, args=(i, pr[1], pr[2]))
+        for i in range(len(q[2])):
+            rr = df.apply(ascoringMS, axis=1, raw=True, args=(q[1], i,q[2]))
             if res is None:
                 res = rr
             else:
                 res = pd.concat([res, rr], axis=1)
         return res
-    elif pr[0] == Num:
-        return df.apply(ascoringNum, axis=1, raw=True, args=(pr[1], pr[2]))
+    elif q[0] == Num:
+        return df.apply(ascoringNum, axis=1, raw=True, args=(q[1], q[2]))
+    elif q[0] == SS:
+        res = None
+        for i in range(q[1][1]-q[1][0]+1):
+            rr = df.apply(ascoringSS, axis=1, raw=True, args=(i, q[1], q[2]))
+            if res is None:
+                res = rr
+            else:
+                res = pd.concat([res, rr], axis=1)
+        return res
     else:
-        print(f"ERROR: Undefined problem type: {pr[0]}")
+        print(f"ERROR: Undefined question type: {q[0]}")
         exit()
 
-def get_maxcolms(prs):
+def get_maxcolms(qref):
     maxcol = 0
-    for pr in prs:
-        if pr[0] == S:
-            if maxcol < pr[1]: maxcol = pr[1]
+    for q in qref:
+        if q[0] == S:
+            if maxcol < q[1]: maxcol = q[1]
         else:
-            if maxcol < max(pr[1]): maxcol = max(pr[1])
+            if maxcol < max(q[1]): maxcol = max(q[1])
     return maxcol
 
-def get_sp2p(prs):
-    num_sp = get_numproblems(prs)
-    sp2p = np.zeros(num_sp, dtype=np.int)
-    nump = 0
-    numsp = 0
-    for pr in prs:
-        if pr[0] == MS:
-            for i in pr[1]:
-                sp2p[numsp] = nump
-                numsp += 1
+def get_sq2p(qref):
+    num_squestions = get_num_squestions(qref)
+    sq2p = np.zeros(num_squestions, dtype=np.int)
+    numq = 0
+    numsq = 0
+    for q in qref:
+        if q[0] == MS:
+            for i in q[1]:
+                sq2p[numsq] = numq
+                numsq += 1
         else:
-            sp2p[numsp] = nump
-            numsp += 1
-        nump += 1
-    return sp2p
+            sq2p[numsq] = numq
+            numsq += 1
+        numq += 1
+    return sq2p
 
 def correctRate(scorelist_v):
     return sum(scorelist_v) / len(scorelist_v)
 
-def print_crate(marubatu):
-    print("=============================", file=sys.stderr)
-    print("Correct rate for each problem", file=sys.stderr)
-    print("-----------------------------", file=sys.stderr)
+def print_crate(marubatu, points_alloc):
+    print("====================================", file=sys.stderr)
+    print("Correct rate for each small question", file=sys.stderr)
+    print("      and allocation of points", file=sys.stderr)
+    print(" No: rate, points, q_type", file=sys.stderr)
+    print("------------------------------------", file=sys.stderr)
     crate = marubatu.iloc[:,1:].apply(correctRate, raw=True)
-    sp2p = get_sp2p(ProblemReferences)
+    sq2p = get_sq2p(QuestionReferences)
     for i,rate in enumerate(crate):
-        p = ProblemReferences[sp2p[i]]
-        if p[0] == S: kind = f'  S[{p[1]}]'
-        elif p[0] == MS: kind = f' MS{p[1]}'
-        else: kind = f'Num{p[1]}'
-        print(f"{i+1:3d}:{rate*100.0:3.0f}%, {kind}", file=sys.stderr)
+        q = QuestionReferences[sq2p[i]]
+        if q[0] == S: kind = f'  S[{q[1]}]'
+        elif q[0] == MS: kind = f' MS{q[1]}'
+        else: kind = f'Num{q[1]}'
+        print(f"{i+1:3d}:{rate*100.0:3.0f}%, {points_alloc[i]:2}, {kind:}", file=sys.stderr)
 
-def totalscore(scorelist):
-    return sum(scorelist[1:]) * 3
+def totalscore(scorelist, points_alloc):
+    if len(scorelist) != len(points_alloc)+1:
+        print("ERROR: in totalscore()", file=sys.stderr)
+        print(scorelist, file=sys.stderr)
+        print(points_alloc, file=sys.stderr)
+        exit()
+    return sum(scorelist[1:] * points_alloc)
+#    return sum(scorelist[1:]) * 3
 
-def marksheetScoring(filename, crate):
-    maxcolms = get_maxcolms(ProblemReferences)
+def get_points_alloc(qref, desired_pscore):
+    num_squestions = get_num_squestions(qref)
+    points_alloc = np.zeros(num_squestions, dtype=np.int)
+    num = 0
+    sum_palloc = 0
+    for q in qref:
+        weight = 100
+        if len(q) >= 4:
+            weight = q[3]
+        if q[0] == MS:
+            inum = len(q[1])
+        elif q[0] == SS:
+            inum = q[1][1]-q[1][0]+1
+        else:
+            inum = 1
+        for i in range(inum):
+            points_alloc[num] = weight
+            sum_palloc += weight
+            num += 1
+    basic_unit_float = desired_pscore * 100.0 / sum_palloc
+    for i in range(num_squestions):
+        points_float = desired_pscore * points_alloc[i] / sum_palloc
+        points = round(points_float)
+        if points <= 0: points = 1
+        points_alloc[i] = points
+    return points_alloc, basic_unit_float
+
+def marksheetScoring(filename, crate, desired_pscore):
+    maxcolms = get_maxcolms(QuestionReferences)
     df = pd.read_csv(filename, header=None, dtype=object, skipinitialspace=True, usecols=list(range(maxcolms+1)))
     df.fillna('-1', inplace=True)
     df.replace('*', -1, inplace=True) # multi-mark col.
@@ -116,13 +167,21 @@ def marksheetScoring(filename, crate):
     df = df.sort_values(by=0, ascending=True)
     print(f"Marksheet-answer: #students={df.shape[0]}, #columns={df.shape[1]}(including id-number)", file=sys.stderr)
     marubatu = df[[0]]
-    for pr in ProblemReferences:
-        ascore = ascoring(df, pr)
+    for q in QuestionReferences:
+        ascore = ascoring(df, q)
         marubatu = pd.concat([marubatu, ascore], axis=1, ignore_index=True)
     marubatu.to_csv(filename+'.marubatu', index=False, header=False)
+    points_alloc, basic_unit_float = get_points_alloc(QuestionReferences, desired_pscore)
+    perfect_score = sum(points_alloc)
+    print(f"#Small_questions={len(points_alloc)}", file=sys.stderr)
+    print(f"Perfect_score={perfect_score} (desired_perfect_score={desired_pscore})", file=sys.stderr)
+    print(f"Basic_points_unit(weight=100)={int(basic_unit_float)}, (float_unit = {basic_unit_float:5.2f})", file=sys.stderr)
     if crate:
-        print_crate(marubatu)
-    id_scores = pd.concat([marubatu[0], marubatu.apply(totalscore, axis=1, raw=True)], axis=1, ignore_index=True)
+        print_crate(marubatu, points_alloc)
+    id_scores = pd.concat([marubatu[0], marubatu.apply(totalscore, axis=1, raw=True, args=(points_alloc,))], axis=1, ignore_index=True)
+#    scores = marubatu.apply(totalscore, axis=1, raw=True, args=(points_alloc))
+#    print(scores, file=sys.stderr)
+#    id_scores = pd.concat([marubatu[0], scores], axis=1, ignore_index=True)
     return id_scores
 
 ### for Twins upload file
@@ -297,7 +356,7 @@ if __name__ == '__main__':
 
     parser = argparse.ArgumentParser(description='scoring for performance evaluation', prog='score')
     parser.add_argument('csvfilename')
-    parser.add_argument('-marksheet', default=None, metavar='ref-filename')
+    parser.add_argument('-marksheet', nargs=2, default=None, metavar=('ref', 'desired_pscore'))
     parser.add_argument('-crate', action='store_true', default=False)
     parser.add_argument('-join', default=None, metavar='filename')
     parser.add_argument('-twins', action='store_true', default=False)
@@ -324,8 +383,8 @@ if __name__ == '__main__':
         exit()
 
     if args.marksheet:
-        ProblemReferences = eval(open(args.marksheet).read())
-        id_scores = marksheetScoring(args.csvfilename, args.crate)
+        QuestionReferences = eval(open(args.marksheet[0]).read())
+        id_scores = marksheetScoring(args.csvfilename, args.crate, int(args.marksheet[1]))
     else:
         if args.twins:
             id_scores, twins = read_twins_upload_file(args.csvfilename)
