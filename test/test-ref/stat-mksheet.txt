@@ -1,24 +1,29 @@
 Marksheet-answer: #students=6, #columns=8(including id-number)
-=============================
-Correct rate for each problem
------------------------------
-  1: 50%,   S[1]
-  2: 83%,  MS[2, 3]
-  3: 33%,  MS[2, 3]
-  4: 17%, Num[4, 5]
-  5: 67%,   S[6]
-  6: 50%,   S[7]
+#Small_questions=6
+Perfect_score=80 (desired_perfect_score=80)
+Basic_points_unit(weight=100)=16, (float_unit = 16.00)
+====================================
+Correct rate for each small question
+      and allocation of points
+ No: rate, points, q_type
+------------------------------------
+  1: 50%, 16,   S[1]
+  2: 50%,  8,  MS[2, 3]
+  3: 67%,  8,  MS[2, 3]
+  4: 17%, 16, Num[4, 5]
+  5: 67%, 16,   S[6]
+  6: 50%, 16,   S[7]
 ==================
 Score statistics
 ------------------
 count     6.000000
-mean      9.000000
-std       2.683282
-min       6.000000
-25%       6.750000
-50%       9.000000
-75%      11.250000
-max      12.000000
+mean     38.666667
+std      13.779211
+min      24.000000
+25%      32.000000
+50%      32.000000
+75%      50.000000
+max      56.000000
 Name: 1, dtype: float64
 =================
 ABCD distribution
@@ -33,28 +38,32 @@ Gakurui statistics
 ------------------
 情報メディア創成学類
 count     3.000000
-mean      8.000000
-std       3.464102
-min       6.000000
-25%       6.000000
-50%       6.000000
-75%       9.000000
-max      12.000000
+mean     37.333333
+std      16.653328
+min      24.000000
+25%      28.000000
+50%      32.000000
+75%      44.000000
+max      56.000000
 Name: 1, dtype: float64
 -------
 別の学類
-count    2.0
-mean     9.0
-std      0.0
-min      9.0
-25%      9.0
-50%      9.0
-75%      9.0
-max      9.0
+count     2.0
+mean     32.0
+std       0.0
+min      32.0
+25%      32.0
+50%      32.0
+75%      32.0
+max      32.0
 Name: 1, dtype: float64
 ==================
 Score distribution
 ------------------
 L.score: num:
-   10- :   2: **
-    0- :   4: ****
+   50- :   2: **
+   40- :   0: 
+   30- :   3: ***
+   20- :   1: *
+   10- :   0: 
+    0- :   0: 

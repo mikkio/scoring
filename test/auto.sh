@@ -1,8 +1,8 @@
 #! /bin/bash
 # a test script
 
-score answer.csv -m ref.py -c -s -d -abcd -g gakurui_id.py -n &> stat-mksheet.txt
-score answer.csv -m ref.py > mksheet.csv
+score answer.csv -m ref.py 80 -c -s -d -abcd -g gakurui_id.py -n &> stat-mksheet.txt
+score answer.csv -m ref.py 80 > mksheet.csv
 score mksheet.csv -j sup.csv -d -n
 score mksheet.csv -j sup.csv -d -adjust 50 70 90 -n
 score mksheet.csv -j sup.csv -d -adjust 50 70 90 > mksheet-sup-adjust.csv
