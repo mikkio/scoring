@@ -72,7 +72,7 @@ usage: score [-h] [-marksheet ref-filename desired-pscore] [-crate] [-join filen
         - 1列目が学籍番号(下7桁), 2列目以降はマークシートのマーク番号
 * `-twins`オプションが指定された場合
     - twinsアップロード用csvファイルと見なされる
-        - headerあり(ただし、scoreコマンドは無視する: shift-jisのため)
+        - headerあり(ただし、scoreコマンドは読み込み時に無視する: shift-jisのため)
         - 列は左から'科目番号','学籍番号', '学期区分','学期評価', '総合評価'
         - twinsからダウンロードしたままのファイルでOK
     - 上記の`-marksheet`オプションと排他的である

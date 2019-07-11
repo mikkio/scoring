@@ -200,7 +200,7 @@ def read_twins_upload_file(twinsfilename):
 
 
 ### ajusting
-
+# adjust
 def point_adjust(point, xp, yp, xmax):
     gradient1 = yp / xp
     gradient2 = (xmax - yp)/(xmax - xp)
@@ -216,12 +216,47 @@ def adjust(id_scores, params):
     id_scores = pd.concat([id_scores[0], id_scores[1].map(adjustfunc).astype(int)], axis=1, ignore_index=True)
     return id_scores
 
+# a2djust
+
+def get_points_abcd(params, id_scores):
+    score_list = np.sort(id_scores[1])[::-1]
+    num = len(score_list)
+    points_list = [score_list[0]]
+    cp = 0
+    for p in params:
+        cp += p
+        points_list.append(score_list[round(num * cp / 100.0)])
+    return points_list
+
+def point_a2djust(p, p_max, p_ap, p_a, p_b, p_c):
+    if p >= p_ap:
+        newpoint = 90 + (10/(p_max-p_ap)) * (p-p_ap)
+    elif p >= p_a:
+        newpoint = 80 + (10/(p_ap-p_a)) * (p-p_a)
+    elif p >= p_b:
+        newpoint = 70 + (10/(p_a-p_b)) * (p-p_b)
+    elif p >= p_c:
+        newpoint = 60 + (10/(p_b-p_c)) * (p-p_c)
+    else:
+        newpoint = (60.0/p_c) * p
+    return round(newpoint)
+
+def a2djust(id_scores, params):
+#    rate_ap, rate_a, rate_b, rate_c = params
+    p_max, p_ap, p_a, p_b, p_c = get_points_abcd(params, id_scores)
+    print(f"A2djust: rate_ap={params[0]}, rate_a={params[1]}, rate_b={params[2]}, rate_c={params[3]}", file=sys.stderr)
+    print(f"A2djust: p_max={p_max}, p_ap={p_ap}, p_a={p_a}, p_b={p_b}, p_c={p_c}", file=sys.stderr)
+    a2djustfunc = lambda p: point_a2djust(p, p_max, p_ap, p_a, p_b, p_c)
+    new_id_scores = pd.concat([id_scores[0], id_scores[1].map(a2djustfunc).astype(int)], axis=1, ignore_index=True)
+    return new_id_scores
+
+
+# interval
 def finterval(x, minval, maxval):
     if x < minval: return minval
     elif x > maxval: return maxval
     else: return x
 
-### interval
 def interval(id_scores, minmax):
     min, max = minmax
     func = lambda x: finterval(x, min, max)
@@ -361,6 +396,7 @@ if __name__ == '__main__':
     parser.add_argument('-join', default=None, metavar='filename')
     parser.add_argument('-twins', action='store_true', default=False)
     parser.add_argument('-adjust', nargs=3, type=float, default=None, metavar=('x', 'y', 'xmax'))
+    parser.add_argument('-a2djust', nargs=4, type=float, default=None, metavar=('A+', 'A', 'B', 'C'))
     parser.add_argument('-abcd', action='store_true', default=False)
     parser.add_argument('-statistics', action='store_true', default=False)
     parser.add_argument('-distribution', action='store_true', default=False)
@@ -396,6 +432,8 @@ if __name__ == '__main__':
 
     if args.adjust:
         id_scores = adjust(id_scores, args.adjust)
+    if args.a2djust:
+        id_scores = a2djust(id_scores, args.a2djust)
     if args.interval:
         id_scores = interval(id_scores, args.interval)
 
