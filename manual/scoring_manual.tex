@@ -99,11 +99,12 @@ csvファイルで表現される。\texttt{score}コマンドは少なくとも
 \begin{tcolorbox}[enhanced jigsaw,breakable,colframe=\mycolor ,colback=white,colbacktitle=\mycolor ,coltitle=white,fonttitle=\bfseries\sffamily,title=\texttt{\$ score -h}]
 
 \begin{verbatim}
-usage: score [-h] [-marksheet ref-filename desired-pscore] [-crate] [-join filename]
-             [-twins] [-adjust x y xmax] [-abcd] [-statistics] [-distribution]
-             [-gakuruistat gakurui-filename] [-nostdout] [-interval min max]
-             [-outputfile filename]
-             csvfilename
+usage: score [-h] [-marksheet ref desired_pscore] [-crate]
+             [-join csvfile2] [-allmerge csvfile2 [csvfile2 ...]]
+             [-twins] [-adjust x y xmax] [-interval min max]
+             [-distribution] [-abcd] [-statistics] [-gakuruistat gakurui-filename]
+             [-nostdout] [-output filename]
+             csvfile
 \end{verbatim}
 
 \end{tcolorbox}
@@ -352,6 +353,22 @@ headerが正しくshift-jisで出力されない
 
 \end{itemize}
 
+\item \texttt{-allmerge csvfile2+}: 採点途中結果ファイルの合算をしない統合
+
+\begin{itemize}
+\item 複数のファイルを引数に取れる。
+
+\item 必須引数のcsvfileに複数のcsvfile2をouter-mergeし、点数の合算は行わない。
+
+\item csvfileとcsvfile2はどちらも必ず1列目が学籍番号でなければならない(csvfileに
+twinsファイルは指定できない)。その他の列は文字列でもなんでもかまわない。
+
+\item その他のすべてのオプションが無視される。
+
+\item 出来上がったファイルをshift-jisに変換してexcelで読んで列名を入力して印刷して保存\smiley 
+
+\end{itemize}
+
 \end{itemize}
 
 \section{使用例}
@@ -481,6 +498,15 @@ headerが正しくshift-jisで出力されない
 
 \begin{itemize}
 \item \$ score twins\_upload.csv -t -s -g gakurui\_id.py -d -abcd -n \&> result\_analysis.txt
+
+\end{itemize}
+
+\item 氏名、学籍番号と採点途中結果を履歴として残す
+
+\begin{itemize}
+\item \$ score meibo.csv -allmerge mksheet.csv \ensuremath{\sim}data\slash sup.csv mksheet\_sup.csv mksheet\_sup\_adjust.csva > matome.csv
+
+\item \texttt{meibo.csv}は名簿から作成する。１列目が学籍番号で２列目が氏名。utf8ファイル。
 
 \end{itemize}
 

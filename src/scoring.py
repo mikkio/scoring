@@ -386,24 +386,34 @@ def twinsjoin(twins, id_scores, joinfilename):
     new_id_scores = newtwins[['学籍番号', '総合評価']]
     return newtwins, new_id_scores
 
+#### allmerge
+def allmerge(csvfilename, csvfilename2s):
+    df = pd.read_csv(csvfilename, header=None, skipinitialspace=True)
+    for csvfilename2 in csvfilename2s:
+        df2 = pd.read_csv(csvfilename2, header=None, skipinitialspace=True)
+        df = pd.merge(df, df2, on=0, how='outer')
+    df = df.sort_values(by=0, ascending=True)
+    return df
+
 if __name__ == '__main__':
     import argparse
 
     parser = argparse.ArgumentParser(description='scoring for performance evaluation', prog='score')
-    parser.add_argument('csvfilename')
+    parser.add_argument('csvfile')
     parser.add_argument('-marksheet', nargs=2, default=None, metavar=('ref', 'desired_pscore'))
     parser.add_argument('-crate', action='store_true', default=False)
-    parser.add_argument('-join', default=None, metavar='filename')
+    parser.add_argument('-join', default=None, metavar='csvfile2')
+    parser.add_argument('-allmerge', nargs='+', default=None, metavar=('csvfile2'))
     parser.add_argument('-twins', action='store_true', default=False)
     parser.add_argument('-adjust', nargs=3, type=float, default=None, metavar=('x', 'y', 'xmax'))
     parser.add_argument('-a2djust', nargs=4, type=float, default=None, metavar=('A+', 'A', 'B', 'C'))
+    parser.add_argument('-interval', nargs=2, type=int, default=None, metavar=('min', 'max'))
+    parser.add_argument('-distribution', action='store_true', default=False)
     parser.add_argument('-abcd', action='store_true', default=False)
     parser.add_argument('-statistics', action='store_true', default=False)
-    parser.add_argument('-distribution', action='store_true', default=False)
     parser.add_argument('-gakuruistat', default=None, metavar='gakurui-filename')
     parser.add_argument('-nostdout', action='store_true', default=False)
-    parser.add_argument('-interval', nargs=2, type=int, default=None, metavar=('min', 'max'))
-    parser.add_argument('-outputfile', default=None, metavar='filename')
+    parser.add_argument('-output', default=None, metavar='filename')
 
     """
     parser.add_argument('-final', nargs=1, default=None)
@@ -415,17 +425,28 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     if args.marksheet and args.twins:
-        print("scoring error: exclusive options: -marksheet and -twins")
+        print("scoring error: exclusive options: -marksheet and -twins", file=sys.stderr)
+        exit()
+
+    if args.allmerge and args.twins:
+        print("scoring error: exclusive options: -allmerge and -twins", file=sys.stderr)
+        exit()
+
+    if args.allmerge:
+        print("NOTICE:", file=sys.stderr)
+        print("-allmerge option ignores all other options", file=sys.stderr)
+        df = allmerge(args.csvfile, args.allmerge)
+        df.to_csv(sys.stdout, index=False, header=False)
         exit()
 
     if args.marksheet:
         QuestionReferences = eval(open(args.marksheet[0]).read())
-        id_scores = marksheetScoring(args.csvfilename, args.crate, int(args.marksheet[1]))
+        id_scores = marksheetScoring(args.csvfile, args.crate, int(args.marksheet[1]))
     else:
         if args.twins:
-            id_scores, twins = read_twins_upload_file(args.csvfilename)
+            id_scores, twins = read_twins_upload_file(args.csvfile)
         else:
-            id_scores = pd.read_csv(args.csvfilename, header=None, dtype=int, skipinitialspace=True)
+            id_scores = pd.read_csv(args.csvfile, header=None, dtype=int, skipinitialspace=True)
 
     if args.join:
         id_scores = join(id_scores, args.join)
@@ -450,9 +471,9 @@ if __name__ == '__main__':
     if args.distribution:
         print_distribution(id_scores.iloc[:,1])
 
-    if not args.nostdout or args.outputfile:
-        if args.outputfile:
-            output = args.outputfile
+    if not args.nostdout or args.output:
+        if args.output:
+            output = args.output
         else:
             output = sys.stdout
         if args.twins:

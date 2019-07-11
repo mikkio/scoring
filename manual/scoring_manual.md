@@ -55,11 +55,12 @@ csvファイルで表現される。`score`コマンドは少なくとも1つの
 加工された成績が出力される。また、分析用の情報は`stderr`に出力される。
 @@@@@@@@@@@@@@@@@@@@@@@@@@@@cb:\&t{\$ score -h}:\mycolor
 ```
-usage: score [-h] [-marksheet ref-filename desired-pscore] [-crate] [-join filename]
-             [-twins] [-adjust x y xmax] [-abcd] [-statistics] [-distribution]
-             [-gakuruistat gakurui-filename] [-nostdout] [-interval min max]
-             [-outputfile filename]
-             csvfilename
+usage: score [-h] [-marksheet ref desired_pscore] [-crate]
+             [-join csvfile2] [-allmerge csvfile2 [csvfile2 ...]]
+             [-twins] [-adjust x y xmax] [-interval min max]
+             [-distribution] [-abcd] [-statistics] [-gakuruistat gakurui-filename]
+             [-nostdout] [-output filename]
+             csvfile
 ```
 @@@@@@@@@@@@@@@@@@@@@@@@@@@@end
 オプション名は区別が可能な限り短縮してよい。`-adjust`と`-abcd`以外は
@@ -178,6 +179,14 @@ twinsへのアップロードファイルの分析が行われる。
 * `-output filename`: 結果を標準出力ではなくファイルに出力する
     - twinsアップロード用ファイルはこのオプションで出力しないと
       headerが正しくshift-jisで出力されない
+* `-allmerge csvfile2+`: 採点途中結果ファイルの合算をしない統合
+    - 複数のファイルを引数に取れる。
+    - 必須引数のcsvfileに複数のcsvfile2をouter-mergeし、点数の合算は行わない。
+    - csvfileとcsvfile2はどちらも必ず1列目が学籍番号でなければならない(csvfileに
+      twinsファイルは指定できない)。その他の列は文字列でもなんでもかまわない。
+    - その他のすべてのオプションが無視される。
+    - 出来上がったファイルをshift-jisに変換してexcelで読んで列名を入力して印刷して保存\&smile
+
 
 # 使用例
 ## 使用例1
@@ -222,6 +231,9 @@ twinsへのアップロードファイルの分析が行われる。
 7. 特別処理が必要な学生に対してtwins_upload.csvを直接修正
 8. 最終結果に対する分析結果を保存
     - $ score twins_upload.csv -t -s -g gakurui_id.py -d -abcd -n &> result_analysis.txt
+9. 氏名、学籍番号と採点途中結果を履歴として残す
+    - $ score meibo.csv -allmerge mksheet.csv \~data/sup.csv mksheet_sup.csv mksheet_sup_adjust.csva > matome.csv
+    - `meibo.csv`は名簿から作成する。１列目が学籍番号で２列目が氏名。utf8ファイル。
 
 ## 使用例2
 `test`ディレクトリ以下に簡単なデータが準備してある。
