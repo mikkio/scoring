@@ -24,8 +24,9 @@ Base Header Level: 3
     - 各問題の正解割合, 評語(A+ABCD)の割合, 点数のヒストグラム, 基本統計, 学類別基本統計
 4. 点数調整
     - 点数調整を行って配点を調整する
-5. Twinsアップロード用ファイルの作成
-    - 点数調整を行った最終結果をtwinsのアップロード用ファイルに統合する。
+5. Twinsへの成績アップロード用ファイルの作成
+    - 点数調整を行った最終結果をtwinsのアップロード用ファイルに統合する
+6. 記録: twins名簿をベースに記録用のファイル作成
 
 # install
 installは以下の2つのファイルを正しい場所に配置すればよい。
@@ -55,49 +56,55 @@ csvファイルで表現される。`score`コマンドは少なくとも1つの
 加工された成績が出力される。また、分析用の情報は`stderr`に出力される。
 @@@@@@@@@@@@@@@@@@@@@@@@@@@@cb:\&t{\$ score -h}:\mycolor
 ```
-usage: score [-h] [-marksheet ref desired_pscore] [-crate]
-             [-join csvfile2] [-allmerge csvfile2 [csvfile2 ...]]
-             [-twins] [-adjust x y xmax] [-interval min max]
-             [-distribution] [-abcd] [-statistics] [-gakuruistat meibofile]
+usage: score [-h] [-marksheet ref-file desired_pscore] [-crate]
+             [-twins] [-join csvfile2] [-record csvfile2 [csvfile2 ...]]
+             [-adjust x y xmax] [-interval min max]
+             [-distribution] [-abcd] [-statistics] [-gakuruistat csv-meibo-utf8]
              [-nostdout] [-output filename]
              csvfile
 ```
 @@@@@@@@@@@@@@@@@@@@@@@@@@@@end
-オプション名は区別が可能な限り短縮してよい。'`a`'で始まるオプション以外は
+オプション名は区別が可能な限り短縮してよい。'`-adjust`'と'`-abcd`'オプション以外は
 すべて1文字で区別できる。
 
-必須引数である`csvfilename`は次のように3種類に解釈される。
+必須引数である`csvfile`は次のように4種類に解釈される。
 * `-marksheet`オプションが指定された場合
     - マークシートの読取結果(学生の解答ファイル)とみなされる
         - headerなし
         - 1列目が学籍番号(下7桁), 2列目以降はマークシートのマーク番号
 * `-twins`オプションが指定された場合
-    - twinsアップロード用csvファイルと見なされる
-        - headerあり(ただし、scoreコマンドは読み込み時に無視する: shift-jisのため)
-        - 列は左から'科目番号','学籍番号', '学期区分','学期評価', '総合評価'
+    - twinsからダウンロードした成績アップロード用csvファイルとみなされる
         - twinsからダウンロードしたままのファイルでOK
-    - 上記の`-marksheet`オプションと排他的である
+        - headerあり(ただし、読み込み時には無視する(sjis&ラベルに変なスペースが入っているため))
+        - 列は左から'科目番号','学籍番号', '学期区分','学期評価', '総合評価'
+* `-record`オプションが指定された場合
+    - twinsからダウンロードされた名簿ファイルとみなされる
+        - twinsからダウンロードしたままのファイルでOK
+        - ただし、'`csv`'と'`utf8`'を指定してダウンロードしたファイルに限る
 * 上記以外
     - 採点途中結果のcsvファイル
         - headerなし
         - 1列目が学籍番号(9桁), 2列目が点数
 
-`score`コマンドの出力はtwinsアップロードファイルへのjoinの場合を除いて、
+@del
+結果的に、上の3つのオプションは排他的である。
+
+`score`コマンドの出力は'`-twins`'または'`-record`'オプションが指定された場合を除いて、
 すべて「採点途中結果のcsvファイル(headerなしの1列目が学籍番号(9桁),2列目が点数)」である。
 
 以下では、作業の種別毎にオプションを説明する。
 
 ## マークシート採点
-### `score csvfilename -marksheet ref-filename desired-pscore ...`
-`csvfilename`をマークシート読み取り結果として読み込み、採点を行う。
-マークシートの正解を定義したファイル(`ref-filename`)を引数として与える。
+### `score csvfile -marksheet ref-file desired-pscore ...`
+`csvfile`をマークシート読み取り結果ファイルとして読み込み、採点を行う。
+マークシートの正解を定義したファイル(`ref-file`)を引数として与える。
 また、マークシートの満点(`desired-pscore`)を与える。正解定義中の各問題のweightに
 したがって各問題に配点する（配点は整数なので要求した満点と
 少し違うこともありえる）。
-`-twins`以外の全てのオプションを同時に使用可能。
+`-twins`と`-record`以外の全てのオプションを同時に使用可能。
 チェック用として各学生・各問題ごとの正誤(正=1, 誤=0)のcsvファイルを以下の
 名称で保存する。
-* `csvfilename.marubatu`
+* `$(csvfile).marubatu`
 
 マークシート採点のための正解定義は[mksheet-ref]節参照。
 学籍番号はすべて頭に`20`が付けられるので(`200000000`を足す)、
@@ -107,10 +114,10 @@ usage: score [-h] [-marksheet ref desired_pscore] [-crate]
 `-marksheet`オプションが指定されているときだけ有効なオプションで、
 各小問毎の正解率、配点、問題タイプを`stderr`に出力する。
 
-## 統合
-### `score csvfilename -join csvfilename2 ...`
-必須ファイル`csvfilename`で指定されたデータ[^mk]に`csvfilename2`で
-指定されるデータを統合する。統合は、keyとして学籍番号を用い、
+## 統合とtwinsアップロードファイルの作成
+### `score csvfile -join csvfile2 ...`
+必須ファイル`csvfile`で指定されたデータ[^mk]に`csvfile2`で
+指定されるデータを統合(点数の合算)する。統合は、keyとして学籍番号を用い、
 `pandas`の`merge`関数を用いる。統合(join)方法は以下の2種類。
 * `-twins`オプションが指定されている場合:
     - twinsアップロードファイルへleft-joinを行う。
@@ -125,15 +132,15 @@ usage: score [-h] [-marksheet ref desired_pscore] [-crate]
 ファイルとして出力される。
 - headerがshift-jisでないといけないので`-output`オプションでファイルを指定する。
     - 標準出力に出すとなぜかshift-jisにならない\&zannen
-- twinsデータの'総合評価'に数値が入っている場合はそれと`csvfilename2`の点数の合計が'総合評価'になる
-- twinsデータの'総合評価'が空の場合は`csvfilename2`の点数が'総合評価'になる
+- twinsデータの'総合評価'に数値が入っている場合はそれと`csvfile2`の点数の合計が'総合評価'になる
+- twinsデータの'総合評価'が空の場合は`csvfile2`の点数が'総合評価'になる
 
-`-join`オプションの引数である`csvfilename2`のファイルの仕様は以下。
+`-join`オプションの引数である`csvfile2`のファイルの仕様は以下。
 * headerなし
 * 1列目: 学籍番号
 * 2列目以降（いくつでもOK): 評価点
     - 2列目以降の点数は合計される
-    - 統合後に`csvfilename`と`csvfilename2`の点数は合計される
+    - 統合後に`csvfile`と`csvfile2`の点数は合計される
 
 他のあらゆるオプションを同時使用可能。
 
@@ -141,7 +148,7 @@ usage: score [-h] [-marksheet ref desired_pscore] [-crate]
 
 ## 点数調整
 点数調整は、マークシート採点後または統合後、あるいはどちらも指定されてない場合は
-`csvfilename`で与えられた処理途中のデータに対して適用される。
+`csvfile`で与えられた処理途中のデータに対して適用される。
 ### `-adjust x y xmax`
 素点xをyに線型に持ち上げる。xmax以上は素点のまま。
 図[fig:adjust]を参照。
@@ -151,7 +158,8 @@ usage: score [-h] [-marksheet ref desired_pscore] [-crate]
 [fig:adjust]: fig/adjust.png width=5cm
 
 ### `-interval min max`
-点数の最低点を`min`、最高点を`max`にする。
+点数の最低点を`min`、最高点を`max`にする。単に範囲からはみ出した点数を
+`min`と`max`に置き換えるだけ。線型変換などはしない。
 
 ## 分析
 分析は点数調整後の成績に対して行われる（すなわち出力ファイルに対する
@@ -160,17 +168,41 @@ usage: score [-h] [-marksheet ref desired_pscore] [-crate]
 * `-distribution`: 点数分布のヒストグラム出力
 * `-abcd`: 標語(A+, A, B, C, D)の人数分布
 * `-statistics`: 平均, 標準偏差, 最高・最低点, 4分位点
-* `-gakuruistat meibofile`: 学類毎の`statistics`
-    - `meibofile`はtwinsからダウンロードした名簿ファイル
+* `-gakuruistat csv-meibo-utf8`: 学類毎の`statistics`
+    - `csv-meibo-utf8`はtwinsからダウンロードした名簿ファイル
         - csvでかつutf8を指定してダウンロード
+        - ('`-record`'オプションで与える名簿と同じファイルでOK)
 
-あらゆる他のオプションと同時併用できる。最終結果(すなわち出力データ)に対する
-分析を行う。先に行われるのは、マークシート採点、統合、点数調整である。
-いずれも指定されていない場合は、入力としての`csvfilename`がそのまま
+`-record`オプションを除くあらゆる他のオプションと同時併用できる。
+最終結果(すなわち出力データ)に対する分析を行う。先に行われるのは、
+マークシート採点、統合、点数調整である。
+いずれも指定されていない場合は、入力としての`csvfile`がそのまま
 分析対象となる。`-twins`オプションが指定されている場合は、
 twinsへのアップロードファイルの分析が行われる。
 
 点数調整と分析は同時に指定しながら調整するのが普通の使い方と思われる。
+
+## 記録
+採点途中の結果を学籍番号・氏名付きのファイルにまとめて記録用のファイルを作成する
+オプションが以下である。
+* `-record csvfile2 [csvfile2 ...]`
+
+このオプションが指定されると、必須引数`csvfile`はtwinsからダウンロード
+された名簿ファイルとみなされる。これは`-gakuruistat`の引数と同じファイルで、
+twinsからダウンロードしたままの名簿ファイルでOK。ただし、'`csv`'と'`utf8`'を
+指定してダウンロードしたファイルに限る。以下のような処理を行う。
+* 上記の名簿にこのオプションの引数`csvfile2`(複数指定できる)をouter-joinする。
+* 点数の合算などはしない
+* `csvfile2`は必ず1列目が学籍番号でなければならない(`csvfile2`に
+  twinsファイルは指定できない)。その他の列は文字列でもなんでもかまわない。
+* '`-output`'オプション以外のすべてのオプションが無視される。
+* '`-output`'オプションを指定するとExcelファイルが`-output`オプションで
+指定したファイル名のファイルとして出力される。
+    - この場合、`filename`の拡張子は`xlsx`がよいと思われる。
+    - Headerは名簿ファイルの項目についてしか入ってないので、
+    出力後に各列の意味を手動で入力する必要がある。
+* '`-output`'オプションがない場合は、utf8のcsvファイルとしてstdoutに出力される。
+
 
 ## その他 
 その他のオプションは以下。
@@ -179,14 +211,7 @@ twinsへのアップロードファイルの分析が行われる。
 * `-output filename`: 結果を標準出力ではなくファイルに出力する
     - twinsアップロード用ファイルはこのオプションで出力しないと
       headerが正しくshift-jisで出力されない
-* `-allmerge csvfile2+`: 採点途中結果ファイルの合算をしない統合
-    - 複数のファイルを引数に取れる。
-    - 必須引数のcsvfileに複数のcsvfile2をouter-mergeし、点数の合算は行わない。
-    - csvfileとcsvfile2はどちらも必ず1列目が学籍番号でなければならない(csvfileに
-      twinsファイルは指定できない)。その他の列は文字列でもなんでもかまわない。
-    - その他のすべてのオプションが無視される。
-    - 出来上がったファイルをshift-jisに変換してexcelで読んで列名を入力して印刷して保存\&smile
-
+    - '`-record`'オプションが指定されている場合は、Excelファイルが出力される。
 
 # 使用例
 ## 使用例1
@@ -194,45 +219,46 @@ twinsへのアップロードファイルの分析が行われる。
 2種類の解答をしてもらった。また、宿題の点数が別に定義されている。
 
 1. ファイルの準備
-    - マークシートの解答を\~data/answer.csvに用意
-    - 記述問題の採点結果と宿題の点数を\~data/sup.csvに用意
-    - twinsからアップロード用のファイルを\~data/upload.csvにダウンロード
-    - twinsから名簿ファイルを\~meibo/meibo.csvにダウンロード
-        - csvかつutf8を指定
-2. マークシートの正解と配点重みを定義したファイルを作成する
-    - 正解(と配点重み): reference.py
+    - answer.csv: マークシートの読み取り結果
+    - sup.csv: 記述問題の採点結果と宿題の点数(1列目が学籍番号, 2列目と3列目にそれぞれの点数)
+    - upload.csv: twinsからダウンロードした成績アップロード用ファイル
+        - ファイル形式の指定はできない(csvでshift-jis) (そのままでよい)
+    - meibo.csv: twinsからダウンロードした名簿ファイル
+        - csvかつutf8を指定してダウンロード
+    - refrence.py: マークシートの正解と配点重みを定義したファイル
         - pythonのlist形式の記述なので拡張子を`py`としているが、
           気持ち悪ければ`txt`でもOK
-3. マークシートの採点
-    - 小問の正解率と満点を80としたときの配点を保存
-        - $ score \~data/answer.csv -m reference.py 80 -c -n &> crate.txt
+2. マークシートの採点
+    - 小問の正解率と満点を80としたときの配点等の情報を保存
+        - $ score answer.csv -m reference.py 80 -c -n &> crate.txt
     - マークシートだけの得点状況を分析
-        - $ score \~data/answer.csv -m reference.py 80 -s -d -abcd -n
+        - $ score answer.csv -m reference.py 80 -s -d -abcd -n
         - 分析結果を残したい場合は最後に`&> file.txt`を付ける
+        - この結果から正解の配点重みを変更してもよい
     - (マークシートだけの得点を少し調整する場合)
-        - $ score \~data/answer.csv -m reference.py 80 -d -adjust x y xmax -i min max -n
-        - あるいは、正解の配点重みを変更してもよい
-    - 結果を書き出す
-        - $ score \~data/answer.csv -m reference.py -adjust x y xmax > mksheet.csv
-5. ~data/sup.csvを統合
-    - 統合する
-        - $ score mksheet.csv -j \~data/sup.csv > mksheet_sup.csv
-    - 得点調整を行う
+        - $ score answer.csv -m reference.py 80 -d -adjust x y xmax -n
+    - 採点結果を書き出す
+        - $ score answer.csv -m reference.py 80 [-adjust x y xmax] > mksheet.csv
+3. マークシート以外の点数を統合
+    - sup.csvを統合する
+        - $ score mksheet.csv -j sup.csv > mksheet_sup.csv
+4. 得点調整を行う
+    - 例えば、`-adjust`オプションを使って調整する
         - $ score mksheet_sup.csv -abcd -d -adjust x y xmax -n
         - (最低・最高点が[0,100]をはみ出す場合は`-i 0 100`を加える)
     - 結果を書き出す
         - $ score mksheet_sup.csv -abcd -d -adjust x y xmax > mksheet_sup_adjust.csv
-    - (上記の3つは同時に行うこともできる)
-        - $ score mksheet.csv -j \~data/sup.csv -abcd -d -adjust x y xmax > mksheet_sup_adjust.csv
-6. twinsのアップロードファイルを作成
-    - $ score \~data/upload.csv -t -j mksheet_sup_adjust.csv -d > twins_upload.csv
+    - (上記の2つの手順は同時に行うこともできる)
+        - $ score mksheet.csv -j sup.csv -abcd -d -adjust x y xmax > mksheet_sup_adjust.csv
+5. twinsのアップロードファイルを作成
+    - $ score upload.csv -t -j mksheet_sup_adjust.csv -d > twins_upload.csv
     - (最低・最高点が[0,100]をはみ出す場合は`-i 0 100`を加える)
-7. 特別処理が必要な学生に対してtwins_upload.csvを直接修正
-8. 最終結果に対する分析結果を保存
-    - $ score twins_upload.csv -t -s -g \~meibo/meibo.csv -d -abcd -n &> result_analysis.txt
-9. 氏名、学籍番号と採点途中結果を履歴として残す
-    - $ score meibo.csv -allmerge mksheet.csv \~data/sup.csv mksheet_sup.csv mksheet_sup_adjust.csva > matome.csv
-    - `meibo.csv`は名簿から作成する。１列目が学籍番号で２列目が氏名。utf8ファイル。
+6. 特別処理が必要な学生に対してtwins_upload.csvを直接修正
+7. 最終結果に対する分析結果を保存
+    - $ score twins_upload.csv -t -s -g meibo.csv -d -abcd -n &> result_analysis.txt
+8. 氏名、学籍番号と採点途中結果を履歴として残す
+    - $ score meibo.csv -record mksheet.csv sup.csv mksheet_sup.csv mksheet_sup_adjust.csv -o matome.xlsx
+    - `matome.xlsx`に手作業でラベルなどを付ける
 
 ## 使用例2
 `test`ディレクトリ以下に簡単なデータが準備してある。
@@ -271,15 +297,21 @@ twinsへのアップロードファイルの分析が行われる。
     * 明示的なsave命令はない。自動で保存される。
 * ソフトを終了
 
-### 履修者名簿
+### 成績アップロード用ファイル
 成績アップロード用の履修者名簿をtwinsからダウンロード。
 処理の最後にこのファイルに成績を統合する。
 headerがshift-jisであるが、そのままでよい(scoringパッケージは
 headerを読み飛ばす)。アップロードファイルを出力する場合は
 shift-jisのheaderを`score`コマンドが付ける。
 
-### 正解の定義
-マークシート読み取り結果に対する正解を定義するファイルを
+### 名簿
+twinsから名簿をダウンロード。形式はcsvとutf8を指定してダウンロードする。
+このファイルは`-gakuruistat`オプションに与え、学籍番号から所属学類を
+決定するために使われる。また、`-record`オプションで氏名付きの記録
+ファイルを作成するときにも使われる。
+
+### 正解の定義と配点重み作成
+マークシート読み取り結果に対する正解と配点重みを定義するファイルを
 作成する必要がある。以下の種類の解答に対応。
 * `S`: 選択肢から1つ選択
 * `SS`: 選択肢から1つ選択の連続
@@ -292,10 +324,6 @@ shift-jisのheaderを`score`コマンドが付ける。
 配点重みを調整したい場合は100(%)を基準に上下する割合を指定する。
 詳しくは[mksheet-ref]節を参照。
 
-### 学類学生番号情報
-学類毎の成績統計を出す場合は、学類毎の学生の学籍番号情報が必要。
-これはtwinsからダウンロードできる名簿ファイルを与える。
-形式はcsvとutf8を指定してダウンロードする。
 
 ## マークシートの正解定義 [mksheet-ref]
 マークシート問題の正解定義はpythonのlist形式のファイルを作成し、
@@ -324,7 +352,7 @@ shift-jisのheaderを`score`コマンドが付ける。
 
 @del
 「配点重み」は省略されている場合`100`となり、`100`でない場合は`100`を基準
-とした割合で指定する。
+とした割合と解釈される。
 
 例えば以下の通り。4つ目の`MS`問題だけ各小問を配点重み`50`の割合いとしている。
 他の(小)問の配点重みは指定していないのでdefaultの`100`となる。
@@ -342,6 +370,9 @@ shift-jisのheaderを`score`コマンドが付ける。
 ]
 ```
 @@@@@@@@@@@@@@@@@@@@@@@@@end
+最初の3行は`[SS, [1,3], [1,3,6]]`と同じである。ただし、`SS`を使うと
+小問毎の配点重みが同じになるので、小問毎に配点重みを変えたい場合は
+`S`で記述する必要がある。
 
 \hfill 以上
 

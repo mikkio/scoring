@@ -2,6 +2,8 @@ test/stat-mksheet.txt
 test/stat-twins.txt
 test/twins-upload.csv
 test/mksheet.csv
+test/mksheet-sup.csv
 test/mksheet-sup-adjust.csv
 test/answer.csv.marubatu
+test/record.xlsx
 /manual/scoring_manual_ktu

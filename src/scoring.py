@@ -265,15 +265,6 @@ def interval(id_scores, minmax):
 
 #### print statistics
 
-def read_meibo(filename):
-    meibo = pd.read_csv(filename, skiprows=4, header=None, skipinitialspace=True)
-    if meibo[0][0] != 1:
-        print("Score Error in reading meibo file.", file=sys.stderr)
-        exit()
-    meibo = meibo[[3,1,2,4,5]]
-    meibo.columns = ['学籍番号', '所属学類', '学年', '氏名', '氏名カナ']
-    return meibo
-
 Pgakuruimei = re.compile(r'.*学群(.+学類).*')
 def ex_gakuruimei(str):
     mobj = Pgakuruimei.match(str)
@@ -282,10 +273,21 @@ def ex_gakuruimei(str):
     else:
         return '不明学類'
 
+def read_meibo(filename):
+    meibo = pd.read_csv(filename, skiprows=4, header=None, skipinitialspace=True)
+    if meibo[0][0] != 1:
+        print("Score Error in reading meibo file.", file=sys.stderr)
+        exit()
+    meibo = meibo[[3,1,2,4,5]]
+    meibo.columns = ['学籍番号', '所属学類', '学年', '氏名', '氏名カナ']
+    meibo['所属学類'] = meibo['所属学類'].map(ex_gakuruimei)
+    return meibo
+
 def mk_gakurui_dicset(meibo):
     dicset = {}
     for i in range(meibo.shape[0]):
-        gakuruimei = ex_gakuruimei(meibo['所属学類'][i])
+#        gakuruimei = ex_gakuruimei(meibo['所属学類'][i])
+        gakuruimei = meibo['所属学類'][i]
         if gakuruimei in dicset:
             dicset[gakuruimei].add(meibo['学籍番号'][i])
         else:
@@ -409,24 +411,26 @@ def twinsjoin(twins, id_scores, joinfilename):
     new_id_scores = newtwins[['学籍番号', '総合評価']]
     return newtwins, new_id_scores
 
-#### allmerge
-def allmerge(csvfilename, csvfilename2s):
-    df = pd.read_csv(csvfilename, header=None, skipinitialspace=True)
+#### record
+def record(meibofilename, csvfilename2s):
+    df = read_meibo(meibofilename)
+    df.rename(columns={'学籍番号':0}, inplace=True)
     for csvfilename2 in csvfilename2s:
         df2 = pd.read_csv(csvfilename2, header=None, skipinitialspace=True)
         df = pd.merge(df, df2, on=0, how='outer')
-    df = df.sort_values(by=0, ascending=True)
+    df.rename(columns={0:'学籍番号'}, inplace=True)
+    df = df.sort_values(by=['所属学類','学籍番号'], ascending=True)
     return df
 
 if __name__ == '__main__':
     import argparse
 
-    parser = argparse.ArgumentParser(description='scoring for performance evaluation', prog='score')
+    parser = argparse.ArgumentParser(description='support tools of scoring for performance evaluation', prog='score')
     parser.add_argument('csvfile')
     parser.add_argument('-marksheet', nargs=2, default=None, metavar=('ref', 'desired_pscore'))
     parser.add_argument('-crate', action='store_true', default=False)
     parser.add_argument('-join', default=None, metavar='csvfile2')
-    parser.add_argument('-allmerge', nargs='+', default=None, metavar=('csvfile2'))
+    parser.add_argument('-record', nargs='+', default=None, metavar=('csvfile2'))
     parser.add_argument('-twins', action='store_true', default=False)
     parser.add_argument('-adjust', nargs=3, type=float, default=None, metavar=('x', 'y', 'xmax'))
     parser.add_argument('-a2djust', nargs=4, type=float, default=None, metavar=('A+', 'A', 'B', 'C'))
@@ -438,28 +442,24 @@ if __name__ == '__main__':
     parser.add_argument('-nostdout', action='store_true', default=False)
     parser.add_argument('-output', default=None, metavar='filename')
 
-    """
-    parser.add_argument('-final', nargs=1, default=None)
-    parser.add_argument('num_perm', type=int)
-    parser.add_argument('-long_len', type=int, default=0
-    parser.add_argument('-threshold', type=float, default=1.0)
-    parser.add_argument('-real', action='store_true', default=False)
-    """
     args = parser.parse_args()
 
     if args.marksheet and args.twins:
         print("scoring error: exclusive options: -marksheet and -twins", file=sys.stderr)
         exit()
 
-    if args.allmerge and args.twins:
-        print("scoring error: exclusive options: -allmerge and -twins", file=sys.stderr)
+    if args.record and args.twins:
+        print("scoring error: exclusive options: -record and -twins", file=sys.stderr)
         exit()
 
-    if args.allmerge:
+    if args.record:
         print("NOTICE:", file=sys.stderr)
-        print("-allmerge option ignores all other options", file=sys.stderr)
-        df = allmerge(args.csvfile, args.allmerge)
-        df.to_csv(sys.stdout, index=False, header=False)
+        print("-record option ignores all other options but -output option", file=sys.stderr)
+        df = record(args.csvfile, args.record)
+        if args.output:
+            df.to_excel(args.output, index=False)
+        else:
+            df.to_csv(sys.stdout, index=False)
         exit()
 
     if args.marksheet:

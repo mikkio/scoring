@@ -45,12 +45,14 @@
 
 \end{itemize}
 
-\item Twinsアップロード用ファイルの作成
+\item Twinsへの成績アップロード用ファイルの作成
 
 \begin{itemize}
-\item 点数調整を行った最終結果をtwinsのアップロード用ファイルに統合する。
+\item 点数調整を行った最終結果をtwinsのアップロード用ファイルに統合する
 
 \end{itemize}
+
+\item 記録: twins名簿をベースに記録用のファイル作成
 
 \end{enumerate}
 
@@ -99,19 +101,19 @@ csvファイルで表現される。\texttt{score}コマンドは少なくとも
 \begin{tcolorbox}[enhanced jigsaw,breakable,colframe=\mycolor ,colback=white,colbacktitle=\mycolor ,coltitle=white,fonttitle=\bfseries\sffamily,title=\texttt{\$ score -h}]
 
 \begin{verbatim}
-usage: score [-h] [-marksheet ref desired_pscore] [-crate]
-             [-join csvfile2] [-allmerge csvfile2 [csvfile2 ...]]
-             [-twins] [-adjust x y xmax] [-interval min max]
-             [-distribution] [-abcd] [-statistics] [-gakuruistat meibofile]
+usage: score [-h] [-marksheet ref-file desired_pscore] [-crate]
+             [-twins] [-join csvfile2] [-record csvfile2 [csvfile2 ...]]
+             [-adjust x y xmax] [-interval min max]
+             [-distribution] [-abcd] [-statistics] [-gakuruistat csv-meibo-utf8]
              [-nostdout] [-output filename]
              csvfile
 \end{verbatim}
 
 \end{tcolorbox}
-オプション名は区別が可能な限り短縮してよい。`\texttt{a}'で始まるオプション以外は
+オプション名は区別が可能な限り短縮してよい。`\texttt{-adjust}'と`\texttt{-abcd}'オプション以外は
 すべて1文字で区別できる。
 
-必須引数である\texttt{csvfilename}は次のように3種類に解釈される。
+必須引数である\texttt{csvfile}は次のように4種類に解釈される。
 
 \begin{itemize}
 \item \texttt{-marksheet}オプションが指定された場合
@@ -131,18 +133,30 @@ usage: score [-h] [-marksheet ref desired_pscore] [-crate]
 \item \texttt{-twins}オプションが指定された場合
 
 \begin{itemize}
-\item twinsアップロード用csvファイルと見なされる
+\item twinsからダウンロードした成績アップロード用csvファイルとみなされる
 
 \begin{itemize}
-\item headerあり(ただし、scoreコマンドは読み込み時に無視する: shift-jisのため)
+\item twinsからダウンロードしたままのファイルでOK
+
+\item headerあり(ただし、読み込み時には無視する(sjis\&ラベルに変なスペースが入っているため))
 
 \item 列は左から'科目番号`,'学籍番号`, `学期区分','学期評価', `総合評価'
 
-\item twinsからダウンロードしたままのファイルでOK
+\end{itemize}
 
 \end{itemize}
 
-\item 上記の\texttt{-marksheet}オプションと排他的である
+\item \texttt{-record}オプションが指定された場合
+
+\begin{itemize}
+\item twinsからダウンロードされた名簿ファイルとみなされる
+
+\begin{itemize}
+\item twinsからダウンロードしたままのファイルでOK
+
+\item ただし、`\texttt{csv}'と`\texttt{utf8}'を指定してダウンロードしたファイルに限る
+
+\end{itemize}
 
 \end{itemize}
 
@@ -161,8 +175,9 @@ usage: score [-h] [-marksheet ref desired_pscore] [-crate]
 \end{itemize}
 
 \end{itemize}
+結果的に、上の3つのオプションは排他的である。
 
-\texttt{score}コマンドの出力はtwinsアップロードファイルへのjoinの場合を除いて、
+\texttt{score}コマンドの出力は`\texttt{-twins}'または`\texttt{-record}'オプションが指定された場合を除いて、
 すべて「採点途中結果のcsvファイル(headerなしの1列目が学籍番号(9桁),2列目が点数)」である。
 
 以下では、作業の種別毎にオプションを説明する。
@@ -170,20 +185,20 @@ usage: score [-h] [-marksheet ref desired_pscore] [-crate]
 \subsection{マークシート採点}
 \label{マークシート採点}
 
-\subsubsection{\texttt{score csvfilename -marksheet ref-filename desired-pscore ...}}
-\label{scorecsvfilename-marksheetref-filenamedesired-pscore...}
+\subsubsection{\texttt{score csvfile -marksheet ref-file desired-pscore ...}}
+\label{scorecsvfile-marksheetref-filedesired-pscore...}
 
-\texttt{csvfilename}をマークシート読み取り結果として読み込み、採点を行う。
-マークシートの正解を定義したファイル(\texttt{ref-filename})を引数として与える。
+\texttt{csvfile}をマークシート読み取り結果ファイルとして読み込み、採点を行う。
+マークシートの正解を定義したファイル(\texttt{ref-file})を引数として与える。
 また、マークシートの満点(\texttt{desired-pscore})を与える。正解定義中の各問題のweightに
 したがって各問題に配点する（配点は整数なので要求した満点と
 少し違うこともありえる）。
-\texttt{-twins}以外の全てのオプションを同時に使用可能。
+\texttt{-twins}と\texttt{-record}以外の全てのオプションを同時に使用可能。
 チェック用として各学生・各問題ごとの正誤(正=1, 誤=0)のcsvファイルを以下の
 名称で保存する。
 
 \begin{itemize}
-\item \texttt{csvfilename.marubatu}
+\item \texttt{\$(csvfile).marubatu}
 
 \end{itemize}
 
@@ -197,14 +212,14 @@ usage: score [-h] [-marksheet ref desired_pscore] [-crate]
 \texttt{-marksheet}オプションが指定されているときだけ有効なオプションで、
 各小問毎の正解率、配点、問題タイプを\texttt{stderr}に出力する。
 
-\subsection{統合}
-\label{統合}
+\subsection{統合とtwinsアップロードファイルの作成}
+\label{統合とtwinsアップロードファイルの作成}
 
-\subsubsection{\texttt{score csvfilename -join csvfilename2 ...}}
-\label{scorecsvfilename-joincsvfilename2...}
+\subsubsection{\texttt{score csvfile -join csvfile2 ...}}
+\label{scorecsvfile-joincsvfile2...}
 
-必須ファイル\texttt{csvfilename}で指定されたデータ\floatfootnote{\texttt{-marksheet}オプションが指定されている場合は、採点結果に対して適用される。}に\texttt{csvfilename2}で
-指定されるデータを統合する。統合は、keyとして学籍番号を用い、
+必須ファイル\texttt{csvfile}で指定されたデータ\floatfootnote{\texttt{-marksheet}オプションが指定されている場合は、採点結果に対して適用される。}に\texttt{csvfile2}で
+指定されるデータを統合(点数の合算)する。統合は、keyとして学籍番号を用い、
 \texttt{pandas}の\texttt{merge}関数を用いる。統合(join)方法は以下の2種類。
 
 \begin{itemize}
@@ -249,13 +264,13 @@ usage: score [-h] [-marksheet ref desired_pscore] [-crate]
 
 \end{itemize}
 
-\item twinsデータの'総合評価'に数値が入っている場合はそれと\texttt{csvfilename2}の点数の合計が'総合評価'になる
+\item twinsデータの'総合評価'に数値が入っている場合はそれと\texttt{csvfile2}の点数の合計が'総合評価'になる
 
-\item twinsデータの'総合評価'が空の場合は\texttt{csvfilename2}の点数が'総合評価'になる
+\item twinsデータの'総合評価'が空の場合は\texttt{csvfile2}の点数が'総合評価'になる
 
 \end{itemize}
 
-\texttt{-join}オプションの引数である\texttt{csvfilename2}のファイルの仕様は以下。
+\texttt{-join}オプションの引数である\texttt{csvfile2}のファイルの仕様は以下。
 
 \begin{itemize}
 \item headerなし
@@ -267,7 +282,7 @@ usage: score [-h] [-marksheet ref desired_pscore] [-crate]
 \begin{itemize}
 \item 2列目以降の点数は合計される
 
-\item 統合後に\texttt{csvfilename}と\texttt{csvfilename2}の点数は合計される
+\item 統合後に\texttt{csvfile}と\texttt{csvfile2}の点数は合計される
 
 \end{itemize}
 
@@ -279,7 +294,7 @@ usage: score [-h] [-marksheet ref desired_pscore] [-crate]
 \label{点数調整}
 
 点数調整は、マークシート採点後または統合後、あるいはどちらも指定されてない場合は
-\texttt{csvfilename}で与えられた処理途中のデータに対して適用される。
+\texttt{csvfile}で与えられた処理途中のデータに対して適用される。
 
 \subsubsection{\texttt{-adjust x y xmax}}
 \label{-adjustxyxmax}
@@ -297,7 +312,8 @@ usage: score [-h] [-marksheet ref desired_pscore] [-crate]
 \subsubsection{\texttt{-interval min max}}
 \label{-intervalminmax}
 
-点数の最低点を\texttt{min}、最高点を\texttt{max}にする。
+点数の最低点を\texttt{min}、最高点を\texttt{max}にする。単に範囲からはみ出した点数を
+\texttt{min}と\texttt{max}に置き換えるだけ。線型変換などはしない。
 
 \subsection{分析}
 \label{分析}
@@ -313,27 +329,71 @@ usage: score [-h] [-marksheet ref desired_pscore] [-crate]
 
 \item \texttt{-statistics}: 平均, 標準偏差, 最高・最低点, 4分位点
 
-\item \texttt{-gakuruistat meibofile}: 学類毎の\texttt{statistics}
+\item \texttt{-gakuruistat csv-meibo-utf8}: 学類毎の\texttt{statistics}
 
 \begin{itemize}
-\item \texttt{meibofile}はtwinsからダウンロードした名簿ファイル
+\item \texttt{csv-meibo-utf8}はtwinsからダウンロードした名簿ファイル
 
 \begin{itemize}
 \item csvでかつutf8を指定してダウンロード
 
-\end{itemize}
+\item (`\texttt{-record}'オプションで与える名簿と同じファイルでOK)
 
 \end{itemize}
 
 \end{itemize}
 
-あらゆる他のオプションと同時併用できる。最終結果(すなわち出力データ)に対する
-分析を行う。先に行われるのは、マークシート採点、統合、点数調整である。
-いずれも指定されていない場合は、入力としての\texttt{csvfilename}がそのまま
+\end{itemize}
+
+\texttt{-record}オプションを除くあらゆる他のオプションと同時併用できる。
+最終結果(すなわち出力データ)に対する分析を行う。先に行われるのは、
+マークシート採点、統合、点数調整である。
+いずれも指定されていない場合は、入力としての\texttt{csvfile}がそのまま
 分析対象となる。\texttt{-twins}オプションが指定されている場合は、
 twinsへのアップロードファイルの分析が行われる。
 
 点数調整と分析は同時に指定しながら調整するのが普通の使い方と思われる。
+
+\subsection{記録}
+\label{記録}
+
+採点途中の結果を学籍番号・氏名付きのファイルにまとめて記録用のファイルを作成する
+オプションが以下である。
+
+\begin{itemize}
+\item \texttt{-record csvfile2 [csvfile2 ...]}
+
+\end{itemize}
+
+このオプションが指定されると、必須引数\texttt{csvfile}はtwinsからダウンロード
+された名簿ファイルとみなされる。これは\texttt{-gakuruistat}の引数と同じファイルで、
+twinsからダウンロードしたままの名簿ファイルでOK。ただし、`\texttt{csv}'と`\texttt{utf8}'を
+指定してダウンロードしたファイルに限る。以下のような処理を行う。
+
+\begin{itemize}
+\item 上記の名簿にこのオプションの引数\texttt{csvfile2}(複数指定できる)をouter-joinする。
+
+\item 点数の合算などはしない
+
+\item \texttt{csvfile2}は必ず1列目が学籍番号でなければならない(\texttt{csvfile2}に
+twinsファイルは指定できない)。その他の列は文字列でもなんでもかまわない。
+
+\item `\texttt{-output}'オプション以外のすべてのオプションが無視される。
+
+\item `\texttt{-output}'オプションを指定するとExcelファイルが\texttt{-output}オプションで
+指定したファイル名のファイルとして出力される。
+
+\begin{itemize}
+\item この場合、\texttt{filename}の拡張子は\texttt{xlsx}がよいと思われる。
+
+\item Headerは名簿ファイルの項目についてしか入ってないので、
+出力後に各列の意味を手動で入力する必要がある。
+
+\end{itemize}
+
+\item `\texttt{-output}'オプションがない場合は、utf8のcsvファイルとしてstdoutに出力される。
+
+\end{itemize}
 
 \subsection{その他}
 \label{その他}
@@ -354,21 +414,7 @@ twinsへのアップロードファイルの分析が行われる。
 \item twinsアップロード用ファイルはこのオプションで出力しないと
 headerが正しくshift-jisで出力されない
 
-\end{itemize}
-
-\item \texttt{-allmerge csvfile2+}: 採点途中結果ファイルの合算をしない統合
-
-\begin{itemize}
-\item 複数のファイルを引数に取れる。
-
-\item 必須引数のcsvfileに複数のcsvfile2をouter-mergeし、点数の合算は行わない。
-
-\item csvfileとcsvfile2はどちらも必ず1列目が学籍番号でなければならない(csvfileに
-twinsファイルは指定できない)。その他の列は文字列でもなんでもかまわない。
-
-\item その他のすべてのオプションが無視される。
-
-\item 出来上がったファイルをshift-jisに変換してexcelで読んで列名を入力して印刷して保存\smiley 
+\item `\texttt{-record}'オプションが指定されている場合は、Excelファイルが出力される。
 
 \end{itemize}
 
@@ -387,25 +433,25 @@ twinsファイルは指定できない)。その他の列は文字列でもな�
 \item ファイルの準備
 
 \begin{itemize}
-\item マークシートの解答を\ensuremath{\sim}data\slash answer.csvに用意
+\item answer.csv: マークシートの読み取り結果
 
-\item 記述問題の採点結果と宿題の点数を\ensuremath{\sim}data\slash sup.csvに用意
+\item sup.csv: 記述問題の採点結果と宿題の点数(1列目が学籍番号, 2列目と3列目にそれぞれの点数)
 
-\item twinsからアップロード用のファイルを\ensuremath{\sim}data\slash upload.csvにダウンロード
-
-\item twinsから名簿ファイルを\ensuremath{\sim}meibo\slash meibo.csvにダウンロード
+\item upload.csv: twinsからダウンロードした成績アップロード用ファイル
 
 \begin{itemize}
-\item csvかつutf8を指定
+\item ファイル形式の指定はできない(csvでshift-jis) (そのままでよい)
 
 \end{itemize}
 
-\end{itemize}
-
-\item マークシートの正解と配点重みを定義したファイルを作成する
+\item meibo.csv: twinsからダウンロードした名簿ファイル
 
 \begin{itemize}
-\item 正解(と配点重み): reference.py
+\item csvかつutf8を指定してダウンロード
+
+\end{itemize}
+
+\item refrence.py: マークシートの正解と配点重みを定義したファイル
 
 \begin{itemize}
 \item pythonのlist形式の記述なので拡張子を\texttt{py}としているが、
@@ -418,51 +464,56 @@ twinsファイルは指定できない)。その他の列は文字列でもな�
 \item マークシートの採点
 
 \begin{itemize}
-\item 小問の正解率と満点を80としたときの配点を保存
+\item 小問の正解率と満点を80としたときの配点等の情報を保存
 
 \begin{itemize}
-\item \$ score \ensuremath{\sim}data\slash answer.csv -m reference.py 80 -c -n \&> crate.txt
+\item \$ score answer.csv -m reference.py 80 -c -n \&> crate.txt
 
 \end{itemize}
 
 \item マークシートだけの得点状況を分析
 
 \begin{itemize}
-\item \$ score \ensuremath{\sim}data\slash answer.csv -m reference.py 80 -s -d -abcd -n
+\item \$ score answer.csv -m reference.py 80 -s -d -abcd -n
 
 \item 分析結果を残したい場合は最後に\texttt{\&> file.txt}を付ける
+
+\item この結果から正解の配点重みを変更してもよい
 
 \end{itemize}
 
 \item (マークシートだけの得点を少し調整する場合)
 
 \begin{itemize}
-\item \$ score \ensuremath{\sim}data\slash answer.csv -m reference.py 80 -d -adjust x y xmax -i min max -n
-
-\item あるいは、正解の配点重みを変更してもよい
+\item \$ score answer.csv -m reference.py 80 -d -adjust x y xmax -n
 
 \end{itemize}
 
-\item 結果を書き出す
+\item 採点結果を書き出す
 
 \begin{itemize}
-\item \$ score \ensuremath{\sim}data\slash answer.csv -m reference.py -adjust x y xmax > mksheet.csv
+\item \$ score answer.csv -m reference.py 80 -adjust x y xmax (\autoref{-adjustxyxmax}) > mksheet.csv
 
 \end{itemize}
 
 \end{itemize}
 
-\item \textsubscript{data}\slash sup.csvを統合
+\item マークシート以外の点数を統合
 
 \begin{itemize}
-\item 統合する
+\item sup.csvを統合する
 
 \begin{itemize}
-\item \$ score mksheet.csv -j \ensuremath{\sim}data\slash sup.csv > mksheet\_sup.csv
+\item \$ score mksheet.csv -j sup.csv > mksheet\_sup.csv
+
+\end{itemize}
 
 \end{itemize}
 
 \item 得点調整を行う
+
+\begin{itemize}
+\item 例えば、\texttt{-adjust}オプションを使って調整する
 
 \begin{itemize}
 \item \$ score mksheet\_sup.csv -abcd -d -adjust x y xmax -n
@@ -478,10 +529,10 @@ twinsファイルは指定できない)。その他の列は文字列でもな�
 
 \end{itemize}
 
-\item (上記の3つは同時に行うこともできる)
+\item (上記の2つの手順は同時に行うこともできる)
 
 \begin{itemize}
-\item \$ score mksheet.csv -j \ensuremath{\sim}data\slash sup.csv -abcd -d -adjust x y xmax > mksheet\_sup\_adjust.csv
+\item \$ score mksheet.csv -j sup.csv -abcd -d -adjust x y xmax > mksheet\_sup\_adjust.csv
 
 \end{itemize}
 
@@ -490,7 +541,7 @@ twinsファイルは指定できない)。その他の列は文字列でもな�
 \item twinsのアップロードファイルを作成
 
 \begin{itemize}
-\item \$ score \ensuremath{\sim}data\slash upload.csv -t -j mksheet\_sup\_adjust.csv -d > twins\_upload.csv
+\item \$ score upload.csv -t -j mksheet\_sup\_adjust.csv -d > twins\_upload.csv
 
 \item (最低・最高点が{[0,100]}をはみ出す場合は\texttt{-i 0 100}を加える)
 
@@ -501,16 +552,16 @@ twinsファイルは指定できない)。その他の列は文字列でもな�
 \item 最終結果に対する分析結果を保存
 
 \begin{itemize}
-\item \$ score twins\_upload.csv -t -s -g \ensuremath{\sim}meibo\slash meibo.csv -d -abcd -n \&> result\_analysis.txt
+\item \$ score twins\_upload.csv -t -s -g meibo.csv -d -abcd -n \&> result\_analysis.txt
 
 \end{itemize}
 
 \item 氏名、学籍番号と採点途中結果を履歴として残す
 
 \begin{itemize}
-\item \$ score meibo.csv -allmerge mksheet.csv \ensuremath{\sim}data\slash sup.csv mksheet\_sup.csv mksheet\_sup\_adjust.csva > matome.csv
+\item \$ score meibo.csv -record mksheet.csv sup.csv mksheet\_sup.csv mksheet\_sup\_adjust.csv -o matome.xlsx
 
-\item \texttt{meibo.csv}は名簿から作成する。１列目が学籍番号で２列目が氏名。utf8ファイル。
+\item \texttt{matome.xlsx}に手作業でラベルなどを付ける
 
 \end{itemize}
 
@@ -592,8 +643,8 @@ twinsファイルは指定できない)。その他の列は文字列でもな�
 
 \end{itemize}
 
-\subsubsection{履修者名簿}
-\label{履修者名簿}
+\subsubsection{成績アップロード用ファイル}
+\label{成績アップロード用ファイル}
 
 成績アップロード用の履修者名簿をtwinsからダウンロード。
 処理の最後にこのファイルに成績を統合する。
@@ -601,10 +652,18 @@ headerがshift-jisであるが、そのままでよい(scoringパッケージは
 headerを読み飛ばす)。アップロードファイルを出力する場合は
 shift-jisのheaderを\texttt{score}コマンドが付ける。
 
-\subsubsection{正解の定義}
-\label{正解の定義}
+\subsubsection{名簿}
+\label{名簿}
 
-マークシート読み取り結果に対する正解を定義するファイルを
+twinsから名簿をダウンロード。形式はcsvとutf8を指定してダウンロードする。
+このファイルは\texttt{-gakuruistat}オプションに与え、学籍番号から所属学類を
+決定するために使われる。また、\texttt{-record}オプションで氏名付きの記録
+ファイルを作成するときにも使われる。
+
+\subsubsection{正解の定義と配点重み作成}
+\label{正解の定義と配点重み作成}
+
+マークシート読み取り結果に対する正解と配点重みを定義するファイルを
 作成する必要がある。以下の種類の解答に対応。
 
 \begin{itemize}
@@ -621,13 +680,6 @@ shift-jisのheaderを\texttt{score}コマンドが付ける。
 配点重みは指定しなければdefaultの100(\%)が各小問に設定される。
 配点重みを調整したい場合は100(\%)を基準に上下する割合を指定する。
 詳しくは\ref{mksheet-ref}節を参照。
-
-\subsubsection{学類学生番号情報}
-\label{学類学生番号情報}
-
-学類毎の成績統計を出す場合は、学類毎の学生の学籍番号情報が必要。
-これはtwinsからダウンロードできる名簿ファイルを与える。
-形式はcsvとutf8を指定してダウンロードする。
 
 \subsection{マークシートの正解定義}
 \label{mksheet-ref}
@@ -709,7 +761,7 @@ shift-jisのheaderを\texttt{score}コマンドが付ける。
 
 \end{itemize}
 「配点重み」は省略されている場合\texttt{100}となり、\texttt{100}でない場合は\texttt{100}を基準
-とした割合で指定する。
+とした割合と解釈される。
 
 例えば以下の通り。4つ目の\texttt{MS}問題だけ各小問を配点重み\texttt{50}の割合いとしている。
 他の(小)問の配点重みは指定していないのでdefaultの\texttt{100}となる。
@@ -729,6 +781,9 @@ shift-jisのheaderを\texttt{score}コマンドが付ける。
 \end{verbatim}
 
 \end{tcolorbox}
+最初の3行は\texttt{[SS, [1,3], [1,3,6]]}と同じである。ただし、\texttt{SS}を使うと
+小問毎の配点重みが同じになるので、小問毎に配点重みを変えたい場合は
+\texttt{S}で記述する必要がある。
 
 \hfill  以上
 
