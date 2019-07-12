@@ -58,12 +58,12 @@ csvファイルで表現される。`score`コマンドは少なくとも1つの
 usage: score [-h] [-marksheet ref desired_pscore] [-crate]
              [-join csvfile2] [-allmerge csvfile2 [csvfile2 ...]]
              [-twins] [-adjust x y xmax] [-interval min max]
-             [-distribution] [-abcd] [-statistics] [-gakuruistat gakurui-filename]
+             [-distribution] [-abcd] [-statistics] [-gakuruistat meibofile]
              [-nostdout] [-output filename]
              csvfile
 ```
 @@@@@@@@@@@@@@@@@@@@@@@@@@@@end
-オプション名は区別が可能な限り短縮してよい。`-adjust`と`-abcd`以外は
+オプション名は区別が可能な限り短縮してよい。'`a`'で始まるオプション以外は
 すべて1文字で区別できる。
 
 必須引数である`csvfilename`は次のように3種類に解釈される。
@@ -160,9 +160,9 @@ usage: score [-h] [-marksheet ref desired_pscore] [-crate]
 * `-distribution`: 点数分布のヒストグラム出力
 * `-abcd`: 標語(A+, A, B, C, D)の人数分布
 * `-statistics`: 平均, 標準偏差, 最高・最低点, 4分位点
-* `-gakuruistat gakurui-filename`: 学類毎の`statistics`
-    - 学類毎の学籍番号を定義したファイルを引数として与える
-    - 定義ファイルの詳細は[gakurui-info]節参照。
+* `-gakuruistat meibofile`: 学類毎の`statistics`
+    - `meibofile`はtwinsからダウンロードした名簿ファイル
+        - csvでかつutf8を指定してダウンロード
 
 あらゆる他のオプションと同時併用できる。最終結果(すなわち出力データ)に対する
 分析を行う。先に行われるのは、マークシート採点、統合、点数調整である。
@@ -196,15 +196,14 @@ twinsへのアップロードファイルの分析が行われる。
 1. ファイルの準備
     - マークシートの解答を\~data/answer.csvに用意
     - 記述問題の採点結果と宿題の点数を\~data/sup.csvに用意
-    - twinsからアップロード用のファイルを\~data/upload.csvに用意
-2. マークシートの正解と学類別の学籍番号を定義したファイルを作成する
+    - twinsからアップロード用のファイルを\~data/upload.csvにダウンロード
+    - twinsから名簿ファイルを\~meibo/meibo.csvにダウンロード
+        - csvかつutf8を指定
+2. マークシートの正解と配点重みを定義したファイルを作成する
     - 正解(と配点重み): reference.py
-    - 学類学籍番号: gakurui_id.py
-    - どちらもpythonのlist形式の記述なので拡張子を`py`としているが、
-      気持ち悪ければ`txt`でもOK
-3. マークシートの採点結果を点数化する関数totalscoreを定義。
-    - 今回は小問1問につき3点
-4. マークシートの採点
+        - pythonのlist形式の記述なので拡張子を`py`としているが、
+          気持ち悪ければ`txt`でもOK
+3. マークシートの採点
     - 小問の正解率と満点を80としたときの配点を保存
         - $ score \~data/answer.csv -m reference.py 80 -c -n &> crate.txt
     - マークシートだけの得点状況を分析
@@ -230,7 +229,7 @@ twinsへのアップロードファイルの分析が行われる。
     - (最低・最高点が[0,100]をはみ出す場合は`-i 0 100`を加える)
 7. 特別処理が必要な学生に対してtwins_upload.csvを直接修正
 8. 最終結果に対する分析結果を保存
-    - $ score twins_upload.csv -t -s -g gakurui_id.py -d -abcd -n &> result_analysis.txt
+    - $ score twins_upload.csv -t -s -g \~meibo/meibo.csv -d -abcd -n &> result_analysis.txt
 9. 氏名、学籍番号と採点途中結果を履歴として残す
     - $ score meibo.csv -allmerge mksheet.csv \~data/sup.csv mksheet_sup.csv mksheet_sup_adjust.csva > matome.csv
     - `meibo.csv`は名簿から作成する。１列目が学籍番号で２列目が氏名。utf8ファイル。
@@ -294,8 +293,9 @@ shift-jisのheaderを`score`コマンドが付ける。
 詳しくは[mksheet-ref]節を参照。
 
 ### 学類学生番号情報
-学類毎の成績統計を出す場合は、学類毎の学籍番号を定義したファイルが必要。
-学籍番号の範囲指定と個別指定ができる。詳しくは[gakurui-info]節参照。
+学類毎の成績統計を出す場合は、学類毎の学生の学籍番号情報が必要。
+これはtwinsからダウンロードできる名簿ファイルを与える。
+形式はcsvとutf8を指定してダウンロードする。
 
 ## マークシートの正解定義 [mksheet-ref]
 マークシート問題の正解定義はpythonのlist形式のファイルを作成し、
@@ -342,35 +342,6 @@ shift-jisのheaderを`score`コマンドが付ける。
 ]
 ```
 @@@@@@@@@@@@@@@@@@@@@@@@@end
-
-## 学類学籍番号情報 [gakurui-info]
-学類ごとの学籍番号の定義は、pythonのlist形式のファイルを作成し、
-それを読み込ませる必要がある。
-リストの各要素が各学類の学籍番号情報である。以下で定義される。
-@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@cb::\mycolor
-```
-学類学籍番号の定義ファイル = [ 学類情報1, 学類情報2, ...]
-    学類情報i = [学類名の文字列, 範囲リスト, 個別リスト]
-        範囲リスト = [範囲1, 範囲2, ...]
-            範囲i = [start, end] : startからendまでの学籍番号
-        個別リスト = [学籍番号1, 学籍番号2, ...]
-            学籍番号i = 学籍番号を数値で
-```
-@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@end
-例えば以下の通り。
-@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@cb:学類学籍番号情報定義:\mycolor
-```
-[
-    ['人文学類', [[210010250, 210010350], [209910111]],
-%    ['心理学類', [], [210010222]],
-%    ['工学システム学類', [[210011033, 210011111], [210013000, 210013333]], []],
-    ['社会工学類', [[210022222, 210022333]], []],
-    ['情報科学類', [[210044444, 210044555], [210055555, 2100555560]], []],
-    ['情報メディア創成学類', [[210066000, 210066055]], [209911111, 209822222]],
-    ['知識情報・図書館学類', [[210077000, 210077100], [220088888, 220088999]], []],
-] 
-```
-@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@end
 
 \hfill 以上
 

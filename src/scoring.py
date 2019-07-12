@@ -1,6 +1,7 @@
 import numpy as np
 import pandas as pd
 import sys
+import re
 
 # question type definition
 S = 0   # [S, col, corr [,rate]]
@@ -11,9 +12,6 @@ SS = 3  # [SS, [start,end], [corr,...] [,rate]]
 # the list of question type and reference
 # [type, column, answer[, num_candidate]]
 QuestionReferences = None
-
-# ID's information for each gakurui
-IdInfoGakurui = None
 
 def get_num_squestions(qref):
     numq = 0
@@ -267,17 +265,42 @@ def interval(id_scores, minmax):
 
 #### print statistics
 
-def gakurui_statistics(id_scores):
+def read_meibo(filename):
+    meibo = pd.read_csv(filename, skiprows=4, header=None, skipinitialspace=True)
+    if meibo[0][0] != 1:
+        print("Score Error in reading meibo file.", file=sys.stderr)
+        exit()
+    meibo = meibo[[3,1,2,4,5]]
+    meibo.columns = ['学籍番号', '所属学類', '学年', '氏名', '氏名カナ']
+    return meibo
+
+Pgakuruimei = re.compile(r'.*学群(.+学類).*')
+def ex_gakuruimei(str):
+    mobj = Pgakuruimei.match(str)
+    if mobj:
+        return mobj.group(1)
+    else:
+        return '不明学類'
+
+def mk_gakurui_dicset(meibo):
+    dicset = {}
+    for i in range(meibo.shape[0]):
+        gakuruimei = ex_gakuruimei(meibo['所属学類'][i])
+        if gakuruimei in dicset:
+            dicset[gakuruimei].add(meibo['学籍番号'][i])
+        else:
+            dicset[gakuruimei] = set([meibo['学籍番号'][i]])
+    return dicset
+
+def gakurui_statistics(id_scores, meibofilename):
+    meibo = read_meibo(meibofilename)
+    gdicset = mk_gakurui_dicset(meibo)
     res = []
-    for idinfo in IdInfoGakurui:
-        scores = None
-        for interval in idinfo[1]:
-            ge_id_scores = id_scores[id_scores.iloc[:,0] >= interval[0]]
-            gele_id_scores = ge_id_scores[ge_id_scores.iloc[:,0] <= interval[1]]
-            scores = pd.concat([scores, gele_id_scores])
-        for ind in idinfo[2]:
-            scores = pd.concat([scores, id_scores[id_scores.iloc[:,0] == ind]])
-        res.append([idinfo[0], scores.iloc[:,1].describe()])
+    for gname in gdicset:
+        aset = gdicset[gname]
+        selectstudents = [no in aset for no in id_scores.iloc[:,0]]
+        scores = id_scores.iloc[:,1][selectstudents]
+        res.append([gname, scores.describe()])
     return res
 
 def print_stat(scores):
@@ -286,8 +309,8 @@ def print_stat(scores):
     print("------------------", file=sys.stderr)
     print(scores.describe(), file=sys.stderr)
 
-def print_stat_gakurui(id_scores):
-    gakurui_sta_list = gakurui_statistics(id_scores)
+def print_stat_gakurui(id_scores, meibofilename):
+    gakurui_sta_list = gakurui_statistics(id_scores, meibofilename)
     print("==================", file=sys.stderr)
     print("Gakurui statistics", file=sys.stderr)
     print("------------------", file=sys.stderr)
@@ -411,7 +434,7 @@ if __name__ == '__main__':
     parser.add_argument('-distribution', action='store_true', default=False)
     parser.add_argument('-abcd', action='store_true', default=False)
     parser.add_argument('-statistics', action='store_true', default=False)
-    parser.add_argument('-gakuruistat', default=None, metavar='gakurui-filename')
+    parser.add_argument('-gakuruistat', default=None, metavar='csv-meibo-utf8')
     parser.add_argument('-nostdout', action='store_true', default=False)
     parser.add_argument('-output', default=None, metavar='filename')
 
@@ -466,8 +489,7 @@ if __name__ == '__main__':
     if args.abcd:
         print_abcd(id_scores.iloc[:,1])
     if args.gakuruistat:
-        IdInfoGakurui = eval(open(args.gakuruistat).read())
-        print_stat_gakurui(id_scores)
+        print_stat_gakurui(id_scores, args.gakuruistat)
     if args.distribution:
         print_distribution(id_scores.iloc[:,1])
 
