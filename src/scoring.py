@@ -369,18 +369,37 @@ def print_distribution(scores):
 
 #### join
 
-def join(id_scores, joinfilename):
+def print_only_ids(df, idlabel, ncol):
+    num = 0
+    for i in df[idlabel]:
+        if num == 0:
+            print("    ", end="", file=sys.stderr)
+        elif num%ncol == 0:
+            print(", \n    ", end="", file=sys.stderr)
+        else:
+            print(", ", end="", file=sys.stderr)
+        print(f"{i}", end="", file=sys.stderr)
+        num += 1
+    print("", file=sys.stderr)
+
+def join(id_scores, joinfilename, how):
     id_scores_join = pd.read_csv(joinfilename, header=None, dtype=int, skipinitialspace=True)
-    new_id_scores = pd.merge(id_scores, id_scores_join, on=0, how='outer')
+    new_id_scores = pd.merge(id_scores, id_scores_join, on=0, how=how)
+    outer_id_scores = pd.merge(id_scores, id_scores_join, on=0, how='outer', indicator='from')
     nrow_left = id_scores.shape[0]
     nrow_right = id_scores_join.shape[0]
     nrow_new = new_id_scores.shape[0]
-    print(f"Join(outer):          left({nrow_left}) + right({nrow_right}) = OUTER-join({nrow_new})", file=sys.stderr)
-    if nrow_left < nrow_new:
-        print(f"    Add {nrow_new-nrow_left} students to the left data:", file=sys.stderr)
-        for i in range(nrow_new):
-            if pd.isnull(new_id_scores.iloc[i,1]):
-                print(f"      {new_id_scores.iloc[i,0]}", file=sys.stderr)
+    nrow_outer = outer_id_scores.shape[0]
+    print(f"Join({how}):          left({nrow_left}) + right({nrow_right}) = {how}-join({nrow_new})", file=sys.stderr)
+    left_only = outer_id_scores[outer_id_scores['from']=='left_only']
+    right_only = outer_id_scores[outer_id_scores['from']=='right_only']
+    print(f"  #left_only = {left_only.shape[0]}: keep left scores", file=sys.stderr)
+    if left_only.shape[0] > 0:
+        print_only_ids(left_only, 0, 5)
+    print(f"  #right_only = {right_only.shape[0]}: keep right scores or ignored for 'left-join'", file=sys.stderr)
+    if right_only.shape[0] > 0:
+        print_only_ids(right_only, 0, 5)
+#    del new_id_scores['from']
     scores_sum = new_id_scores.iloc[:,1:].fillna(0).apply(sum, axis=1, raw=True)
     joined_new_id_scores = pd.concat([new_id_scores.iloc[:,0], scores_sum], axis=1, ignore_index=True)
     joined_new_id_scores.fillna(0, inplace=True)
@@ -392,17 +411,20 @@ def twinsjoin(twins, id_scores, joinfilename):
     del twins['総合評価']
     id_scores.columns=['学籍番号', '総合評価']
     newtwins = pd.merge(twins, id_scores, on='学籍番号', how='left')
-    twins_outer = pd.merge(twins, id_scores, on='学籍番号', how='outer')
+    twins_outer = pd.merge(twins, id_scores, on='学籍番号', how='outer', indicator='from')
     nrow_left = twins.shape[0]
     nrow_right = id_scores.shape[0]
     nrow_new = newtwins.shape[0]
     nrow_outer = twins_outer.shape[0]
     print(f"Join(for Twins file): left({nrow_left}) + right({nrow_right}) = LEFT-join({nrow_new})", file=sys.stderr)
-    if nrow_new < nrow_outer:
-        print(f"    Ignore {nrow_outer-nrow_new} students in the right data:", file=sys.stderr)
-        for i in range(nrow_outer):
-            if pd.isnull(twins_outer.iloc[i,0]): # 0 = '科目番号'
-                print(f"      {twins_outer.iloc[i,1]}", file=sys.stderr)
+    left_only = twins_outer[twins_outer['from']=='left_only']
+    right_only = twins_outer[twins_outer['from']=='right_only']
+    print(f"  #left_only = {left_only.shape[0]}: keep twins scores (or put a zero score)", file=sys.stderr)
+    if left_only.shape[0] > 0:
+        print_only_ids(left_only, '学籍番号', 5)
+    print(f"  #right_only = {right_only.shape[0]}: ignored", file=sys.stderr)
+    if right_only.shape[0] > 0:
+        print_only_ids(right_only, '学籍番号', 5)
     newtwins['総合評価'].fillna(0, inplace=True)
     newscores = newtwins['総合評価'].astype('int')
     del newtwins['総合評価']
@@ -472,7 +494,10 @@ if __name__ == '__main__':
             id_scores = pd.read_csv(args.csvfile, header=None, dtype=int, skipinitialspace=True)
 
     if args.join:
-        id_scores = join(id_scores, args.join)
+        if args.twins:
+            id_scores = join(id_scores, args.join, 'left')
+        else:
+            id_scores = join(id_scores, args.join, 'outer')
 
     if args.adjust:
         id_scores = adjust(id_scores, args.adjust)
