@@ -37,12 +37,12 @@ scoringパッケージのすべての機能はこの`score`コマンドを通し
 
 `make install`で配置したい場合は`Makefile`の中の以下の2つの変数を
 正しくセットしてから、`make install`する。
-@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@cb::\mycolor
+@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@cb::\mycolor
 ```
 pylib = scoring.pyを入れるディレクトリ(普通は$PYTHONPATH)
 bindir = scoreコマンドを入れるディレクトリ($PATHのどれか)
 ```
-@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@end
+@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@end
 
 前提条件は以下。
 * python3.6以上
@@ -64,6 +64,7 @@ usage: score [-h] [-marksheet ref-file desired_pscore] [-crate]
              csvfile
 ```
 @@@@@@@@@@@@@@@@@@@@@@@@@@@@end
+
 オプション名は区別が可能な限り短縮してよい。'`-adjust`'と'`-abcd`'オプション以外は
 すべて1文字で区別できる。
 
@@ -95,7 +96,7 @@ usage: score [-h] [-marksheet ref-file desired_pscore] [-crate]
 以下では、作業の種別毎にオプションを説明する。
 
 ## マークシート採点
-### `score csvfile -marksheet ref-file desired-pscore ...`
+### `score csvfile -marksheet ref-file desired-pscore [-crate] ...`
 `csvfile`をマークシート読み取り結果ファイルとして読み込み、採点を行う。
 マークシートの正解を定義したファイル(`ref-file`)を引数として与える。
 また、マークシートの満点(`desired-pscore`)を与える。正解定義中の各問題のweightに
@@ -110,9 +111,8 @@ usage: score [-h] [-marksheet ref-file desired_pscore] [-crate]
 学籍番号はすべて頭に`20`が付けられるので(`200000000`を足す)、
 必ず下7桁になっている必要がある。
 
-### `-crate`
-`-marksheet`オプションが指定されているときだけ有効なオプションで、
-各小問毎の正解率、配点、問題タイプを`stderr`に出力する。
+`-crate`オプションは、`-marksheet`オプションが指定されているときだけ有効な
+オプションで、各小問毎の正解率、配点、問題タイプを`stderr`に出力する。
 
 ## 統合とtwinsアップロードファイルの作成
 ### `score csvfile -join csvfile2 ...`
@@ -149,7 +149,7 @@ usage: score [-h] [-marksheet ref-file desired_pscore] [-crate]
 ## 点数調整
 点数調整は、マークシート採点後または統合後、あるいはどちらも指定されてない場合は
 `csvfile`で与えられた処理途中のデータに対して適用される。
-### `-adjust x y xmax`
+### `-adjust x y xmax` [null-label1]
 素点xをyに線型に持ち上げる。xmax以上は素点のまま。
 図[fig:adjust]を参照。
 
@@ -157,7 +157,7 @@ usage: score [-h] [-marksheet ref-file desired_pscore] [-crate]
 
 [fig:adjust]: fig/adjust.png width=5cm
 
-### `-interval min max`
+### `-interval min max` [null-label2]
 点数の最低点を`min`、最高点を`max`にする。単に範囲からはみ出した点数を
 `min`と`max`に置き換えるだけ。線型変換などはしない。
 
@@ -184,8 +184,8 @@ twinsへのアップロードファイルの分析が行われる。
 
 ## 記録
 採点途中の結果を学籍番号・氏名付きのファイルにまとめて記録用のファイルを作成する
-オプションが以下である。
-* `-record csvfile2 [csvfile2 ...]`
+オプションが以下の`-record`である。
+* `score csvfile -record csvfile2 [csvfile2 ...] [-output excel-filename]`
 
 このオプションが指定されると、必須引数`csvfile`はtwinsからダウンロード
 された名簿ファイルとみなされる。これは`-gakuruistat`の引数と同じファイルで、
@@ -354,10 +354,10 @@ twinsから名簿をダウンロード。形式はcsvとutf8を指定してダ�
 「配点重み」は省略されている場合`100`となり、`100`でない場合は`100`を基準
 とした割合と解釈される。
 
-例えば以下の通り。4つ目の`MS`問題だけ各小問を配点重み`50`の割合いとしている。
+例えば以下の通り。4つ目の`MS`問題だけ3つの各小問を配点重み`50`の割合いとしている。
 他の(小)問の配点重みは指定していないのでdefaultの`100`となる。
-実際の配点は指定した満点に応じた割合で決定される(整数化するため指定した
-満点と少し誤差が出ることがある)。
+実際の配点は`-marksheet`オプションで指定した満点に対する配点重みの割合で
+決定される(整数化するため指定した満点と少し誤差が出ることがある)。
 @@@@@@@@@@@@@@@@@@@@@@@@@cb:正解定義ファイルの例:\mycolor
 ```
 [

@@ -1,4 +1,3 @@
-Join(for Twins file): left(7) + right(7) = LEFT-join(7)
 ==================
 Score statistics
 ------------------

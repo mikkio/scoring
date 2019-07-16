@@ -390,16 +390,18 @@ def join(id_scores, joinfilename, how):
     nrow_right = id_scores_join.shape[0]
     nrow_new = new_id_scores.shape[0]
     nrow_outer = outer_id_scores.shape[0]
-    print(f"Join({how}):          left({nrow_left}) + right({nrow_right}) = {how}-join({nrow_new})", file=sys.stderr)
+    print(f"Join({how}): left({nrow_left}) + right({nrow_right}) = {how}-join({nrow_new})", file=sys.stderr)
     left_only = outer_id_scores[outer_id_scores['from']=='left_only']
     right_only = outer_id_scores[outer_id_scores['from']=='right_only']
     print(f"  #left_only = {left_only.shape[0]}: keep left scores", file=sys.stderr)
     if left_only.shape[0] > 0:
         print_only_ids(left_only, 0, 5)
-    print(f"  #right_only = {right_only.shape[0]}: keep right scores or ignored for 'left-join'", file=sys.stderr)
+    if how == 'left':
+        print(f"  #right_only = {right_only.shape[0]}: ignored by 'left-join'", file=sys.stderr)
+    else:
+        print(f"  #right_only = {right_only.shape[0]}: keep right scores", file=sys.stderr)
     if right_only.shape[0] > 0:
         print_only_ids(right_only, 0, 5)
-#    del new_id_scores['from']
     scores_sum = new_id_scores.iloc[:,1:].fillna(0).apply(sum, axis=1, raw=True)
     joined_new_id_scores = pd.concat([new_id_scores.iloc[:,0], scores_sum], axis=1, ignore_index=True)
     joined_new_id_scores.fillna(0, inplace=True)
@@ -411,20 +413,26 @@ def twinsjoin(twins, id_scores, joinfilename):
     del twins['総合評価']
     id_scores.columns=['学籍番号', '総合評価']
     newtwins = pd.merge(twins, id_scores, on='学籍番号', how='left')
+    # check correctness
     twins_outer = pd.merge(twins, id_scores, on='学籍番号', how='outer', indicator='from')
+    left_only = twins_outer[twins_outer['from']=='left_only']
+    right_only = twins_outer[twins_outer['from']=='right_only']
+    if left_only.shape[0] > 0 or right_only.shape[0] > 0:
+        print("WARNING!!: occur something wrongs in 'twinsjoin'", file=sys.stderr)
+        print("WARNING!!: occur something wrongs in 'twinsjoin'", file=sys.stderr)
+    """
     nrow_left = twins.shape[0]
     nrow_right = id_scores.shape[0]
     nrow_new = newtwins.shape[0]
     nrow_outer = twins_outer.shape[0]
     print(f"Join(for Twins file): left({nrow_left}) + right({nrow_right}) = LEFT-join({nrow_new})", file=sys.stderr)
-    left_only = twins_outer[twins_outer['from']=='left_only']
-    right_only = twins_outer[twins_outer['from']=='right_only']
     print(f"  #left_only = {left_only.shape[0]}: keep twins scores (or put a zero score)", file=sys.stderr)
     if left_only.shape[0] > 0:
         print_only_ids(left_only, '学籍番号', 5)
     print(f"  #right_only = {right_only.shape[0]}: ignored", file=sys.stderr)
     if right_only.shape[0] > 0:
         print_only_ids(right_only, '学籍番号', 5)
+    """
     newtwins['総合評価'].fillna(0, inplace=True)
     newscores = newtwins['総合評価'].astype('int')
     del newtwins['総合評価']
