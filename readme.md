@@ -1,1 +1,1 @@
-manual/scoring_manual.md
+manual/scoring_manual-mmd.md
