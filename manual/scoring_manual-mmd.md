@@ -144,15 +144,15 @@ usage: score [-h] [-marksheet ref-file desired_pscore] [-crate]
 ## 点数調整
 点数調整は、マークシート採点後または統合後、あるいはどちらも指定されてない場合は
 `csvfile`で与えられた処理途中のデータに対して適用される。
-### `-adjust x y xmax` [null-label1]
+### `score csvfile ... -adjust x y xmax`
 素点xをyに線型に持ち上げる。xmax以上は素点のまま。
 図[fig:adjust]を参照。
 
 ![`-adjust x y xmax`の点数調整][fig:adjust]
 
-[fig:adjust]: fig/adjust.png width=5cm
+[fig:adjust]: manual/fig/adjust.png
 
-### `-interval min max` [null-label2]
+### `score csvfile ... -interval min max`
 点数の最低点を`min`、最高点を`max`にする。単に範囲からはみ出した点数を
 `min`と`max`に置き換えるだけ。線型変換などはしない。
 

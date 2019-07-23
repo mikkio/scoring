@@ -294,8 +294,8 @@ usage: score [-h] [-marksheet ref-file desired_pscore] [-crate]
 点数調整は、マークシート採点後または統合後、あるいはどちらも指定されてない場合は
 \texttt{csvfile}で与えられた処理途中のデータに対して適用される。
 
-\subsubsection{\texttt{-adjust x y xmax}}
-\label{null-label1}
+\subsubsection{\texttt{score csvfile ... -adjust x y xmax}}
+\label{scorecsvfile...-adjustxyxmax}
 
 素点xをyに線型に持ち上げる。xmax以上は素点のまま。
 図\ref{fig:adjust}を参照。
@@ -307,8 +307,8 @@ usage: score [-h] [-marksheet ref-file desired_pscore] [-crate]
 \label{fig:adjust}
 \end{figure}
 
-\subsubsection{\texttt{-interval min max}}
-\label{null-label2}
+\subsubsection{\texttt{score csvfile ... -interval min max}}
+\label{scorecsvfile...-intervalminmax}
 
 点数の最低点を\texttt{min}、最高点を\texttt{max}にする。単に範囲からはみ出した点数を
 \texttt{min}と\texttt{max}に置き換えるだけ。線型変換などはしない。
