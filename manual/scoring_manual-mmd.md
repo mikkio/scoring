@@ -8,7 +8,7 @@ Latex Begin: ltktu.tex
 \newcommand{\mycolor}{olive}
 
 # scoringパッケージの概要
-(この`readme.md`をtexでpdfにしたファイルが`test/scoring_manual.pdf`にある)
+(この`readme.md`をtexでpdfにしたファイルが`manual/scoring_manual.pdf`にある)
 
 採点作業の流れの中で以下のような作業をscoringパッケージはサポートする。
 1. マークシートの採点
@@ -325,7 +325,7 @@ twinsから名簿をダウンロード。形式はcsvとutf8を指定してダ�
 * `S`: 選択問題
     - Format: [S, 列番号, 正解 (, 配点重み)]
 * `SS`: 選択問題の連続
-    - Format: [S, [列番号start, 列番号end], [正解1, 正解2, ...] (, 配点重み)]
+    - Format: [SS, [列番号start, 列番号end], [正解1, 正解2, ...] (, 配点重み)]
         - 列番号startから列番号endまでの連続した列番号に対して、正解1,2,...を正解とする。
     - 各列番号は独立の小問と見なされる
         - 配点重みは各小問にそのまま適用される(小問数で割ったりしない)
