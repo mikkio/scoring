@@ -173,7 +173,9 @@ def marksheetScoring(filename, crate, desired_pscore):
     perfect_score = sum(points_alloc)
     print(f"#Small_questions={len(points_alloc)}", file=sys.stderr)
     print(f"Perfect_score={perfect_score} (desired_perfect_score={desired_pscore})", file=sys.stderr)
-    print(f"Basic_points_unit(weight=100)={int(basic_unit_float)}, (float_unit = {basic_unit_float:5.2f})", file=sys.stderr)
+    basic_point_unit = round(basic_unit_float)
+    basic_point_unit = basic_point_unit if basic_point_unit >= 1 else 1
+    print(f"Basic_points_unit(weight=100)={basic_point_unit}, (float_unit = {basic_unit_float:5.2f})", file=sys.stderr)
     if crate:
         print_crate(marubatu, points_alloc)
     id_scores = pd.concat([marubatu[0], marubatu.apply(totalscore, axis=1, raw=True, args=(points_alloc,))], axis=1, ignore_index=True)
