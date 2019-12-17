@@ -95,6 +95,10 @@ def get_sq2p(qref):
             for i in q[1]:
                 sq2p[numsq] = numq
                 numsq += 1
+        elif q[0] == SS:
+            for i in range(q[1][1]-q[1][0]+1):
+                sq2p[numsq] = numq
+                numsq += 1
         else:
             sq2p[numsq] = numq
             numsq += 1
@@ -116,6 +120,7 @@ def print_crate(marubatu, points_alloc):
         q = QuestionReferences[sq2p[i]]
         if q[0] == S: kind = f'  S[{q[1]}]'
         elif q[0] == MS: kind = f' MS{q[1]}'
+        elif q[0] == SS: kind = f' SS{q[1]}'
         else: kind = f'Num{q[1]}'
         print(f"{i+1:3d}:{rate*100.0:3.0f}%, {points_alloc[i]:2}, {kind:}", file=sys.stderr)
 
