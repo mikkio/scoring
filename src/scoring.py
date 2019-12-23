@@ -277,8 +277,11 @@ def ex_gakuruimei(str):
     mobj = Pgakuruimei.match(str)
     if mobj:
         return mobj.group(1)
-    else:
-        return '不明学類'
+    if str.find('体育専門学群') != -1:
+        return '体育専門学群'
+    if str.find('芸術専門学群') != -1:
+        return '芸術専門学群'
+    return '不明学類'
 
 def read_meibo(filename):
     meibo = pd.read_csv(filename, skiprows=4, header=None, skipinitialspace=True)
