@@ -393,7 +393,10 @@ def print_only_ids(df, idlabel, ncol):
     print("", file=sys.stderr)
 
 def join(id_scores, joinfilename, how):
-    id_scores_join = pd.read_csv(joinfilename, header=None, dtype=int, skipinitialspace=True)
+#    id_scores_join = pd.read_csv(joinfilename, header=None, dtype=int, skipinitialspace=True)
+    id_scores_join = pd.read_csv(joinfilename, header=None, dtype=object, skipinitialspace=True)
+    id_scores_join.fillna('0', inplace=True)
+    id_scores_join = id_scores_join.astype('int')
     new_id_scores = pd.merge(id_scores, id_scores_join, on=0, how=how)
     outer_id_scores = pd.merge(id_scores, id_scores_join, on=0, how='outer', indicator='from')
     nrow_left = id_scores.shape[0]
@@ -509,7 +512,10 @@ if __name__ == '__main__':
         if args.twins:
             id_scores, twins = read_twins_upload_file(args.csvfile)
         else:
-            id_scores = pd.read_csv(args.csvfile, header=None, dtype=int, skipinitialspace=True)
+            # id_scores = pd.read_csv(args.csvfile, header=None, dtype=int, skipinitialspace=True)
+            id_scores = pd.read_csv(args.csvfile, header=None, dtype=object, skipinitialspace=True)
+            id_scores.fillna('0', inplace=True)
+            id_scores = id_scores.astype('int')
 
     if args.join:
         if args.twins:
